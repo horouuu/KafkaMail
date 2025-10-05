@@ -1,4 +1,5 @@
 node_modules
 /*.config.ini
+/config.ini
 data.sqlite
 /modmail.conf
