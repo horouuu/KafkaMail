@@ -1,4 +1,4 @@
 node_modules
 /*.config.ini
-db/data.sqlite
+data.sqlite
 /modmail.conf
