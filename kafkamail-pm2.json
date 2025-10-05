@@ -1,0 +1,7 @@
+{
+    "apps": [{
+        "name": "kafkamail",
+        "cwd": "./",
+        "script": "src/index.js"
+    }]
+}
