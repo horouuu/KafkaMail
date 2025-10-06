@@ -7,19 +7,31 @@ const utils = require("../utils");
 const config = require("../cfg");
 const attachments = require("./attachments");
 const { formatters } = require("../formatters");
-const { callBeforeNewMessageReceivedHooks } = require("../hooks/beforeNewMessageReceived");
-const { callAfterNewMessageReceivedHooks } = require("../hooks/afterNewMessageReceived");
+const {
+  callBeforeNewMessageReceivedHooks,
+} = require("../hooks/beforeNewMessageReceived");
+const {
+  callAfterNewMessageReceivedHooks,
+} = require("../hooks/afterNewMessageReceived");
 const { callAfterThreadCloseHooks } = require("../hooks/afterThreadClose");
-const { callAfterThreadCloseScheduledHooks } = require("../hooks/afterThreadCloseScheduled");
-const { callAfterThreadCloseScheduleCanceledHooks } = require("../hooks/afterThreadCloseScheduleCanceled");
+const {
+  callAfterThreadCloseScheduledHooks,
+} = require("../hooks/afterThreadCloseScheduled");
+const {
+  callAfterThreadCloseScheduleCanceledHooks,
+} = require("../hooks/afterThreadCloseScheduleCanceled");
 const snippets = require("./snippets");
 const { getModeratorThreadDisplayRoleName } = require("./displayRoles");
 
 const ThreadMessage = require("./ThreadMessage");
 
-const {THREAD_MESSAGE_TYPE, THREAD_STATUS, DISCORD_MESSAGE_ACTIVITY_TYPES} = require("./constants");
-const {isBlocked} = require("./blocked");
-const {messageContentToAdvancedMessageContent} = require("../utils");
+const {
+  THREAD_MESSAGE_TYPE,
+  THREAD_STATUS,
+  DISCORD_MESSAGE_ACTIVITY_TYPES,
+} = require("./constants");
+const { isBlocked } = require("./blocked");
+const { messageContentToAdvancedMessageContent } = require("../utils");
 
 const escapeFormattingRegex = new RegExp("[_`~*|]", "g");
 
@@ -80,8 +92,10 @@ class Thread {
   async _sendDMToUser(content, file = null) {
     // Try to open a DM channel with the user
     const dmChannel = await this.getDMChannel();
-    if (! dmChannel) {
-      throw new Error("Could not open DMs with the user. They may have blocked the bot or set their privacy settings higher.");
+    if (!dmChannel) {
+      throw new Error(
+        "Could not open DMs with the user. They may have blocked the bot or set their privacy settings higher."
+      );
     }
 
     return dmChannel.createMessage(content, file);
@@ -97,7 +111,8 @@ class Thread {
     try {
       let firstMessage;
 
-      const textContent = typeof content === "string" ? content : content.content;
+      const textContent =
+        typeof content === "string" ? content : content.content;
       const contentObj = typeof content === "string" ? {} : content;
       if (textContent) {
         // Text content is included, chunk it and send it as individual messages.
@@ -105,9 +120,18 @@ class Thread {
         const chunks = utils.chunkMessageLines(textContent);
         for (const [i, chunk] of chunks.entries()) {
           // Only send embeds, files, etc. with the last message
-          const msg = (i === chunks.length - 1)
-            ? await bot.createMessage(this.channel_id, { ...contentObj, content: chunk }, file)
-            : await bot.createMessage(this.channel_id, { ...contentObj, content: chunk, embed: null });
+          const msg =
+            i === chunks.length - 1
+              ? await bot.createMessage(
+                  this.channel_id,
+                  { ...contentObj, content: chunk },
+                  file
+                )
+              : await bot.createMessage(this.channel_id, {
+                  ...contentObj,
+                  content: chunk,
+                  embed: null,
+                });
 
           firstMessage = firstMessage || msg;
         }
@@ -120,11 +144,18 @@ class Thread {
     } catch (e) {
       // Channel not found
       if (e.code === 10003) {
-        console.log(`[INFO] Failed to send message to thread channel for ${this.user_name} because the channel no longer exists. Auto-closing the thread.`);
+        console.log(
+          `[INFO] Failed to send message to thread channel for ${this.user_name} because the channel no longer exists. Auto-closing the thread.`
+        );
         this.close(true);
       } else if (e.code === 240000) {
-        console.log(`[INFO] Failed to send message to thread channel for ${this.user_name} because the message contains a link blocked by the harmful links filter`);
-        await bot.createMessage(this.channel_id, "Failed to send message to thread channel because the message contains a link blocked by the harmful links filter");
+        console.log(
+          `[INFO] Failed to send message to thread channel for ${this.user_name} because the message contains a link blocked by the harmful links filter`
+        );
+        await bot.createMessage(
+          this.channel_id,
+          "Failed to send message to thread channel because the message contains a link blocked by the harmful links filter"
+        );
       } else {
         throw e;
       }
@@ -147,7 +178,7 @@ class Thread {
       created_at: moment.utc().format("YYYY-MM-DD HH:mm:ss"),
       is_anonymous: 0,
       dm_channel_id: dmChannel.id,
-      ...data
+      ...data,
     });
 
     const threadMessage = await knex("thread_messages")
@@ -164,9 +195,7 @@ class Thread {
    * @private
    */
   async _updateThreadMessage(id, data) {
-    await knex("thread_messages")
-      .where("id", id)
-      .update(data);
+    await knex("thread_messages").where("id", id).update(data);
   }
 
   /**
@@ -175,9 +204,7 @@ class Thread {
    * @private
    */
   async _deleteThreadMessage(id) {
-    await knex("thread_messages")
-      .where("id", id)
-      .delete();
+    await knex("thread_messages").where("id", id).delete();
   }
 
   /**
@@ -185,7 +212,7 @@ class Thread {
    * @private
    */
   async _getAndIncrementNextMessageNumber() {
-    return knex.transaction(async trx => {
+    return knex.transaction(async (trx) => {
       const nextNumberRow = await trx("threads")
         .where("id", this.id)
         .select("next_message_number")
@@ -223,20 +250,34 @@ class Thread {
    * @param {Eris.MessageReference|null} messageReference
    * @returns {Promise<boolean>} Whether we were able to send the reply
    */
-  async replyToUser(moderator, text, replyAttachments = [], isAnonymous = false, messageReference = null) {
-    const regularName = config.useDisplaynames ? moderator.user.globalName || moderator.user.username : moderator.user.username;
-    let moderatorName = config.useNicknames && moderator.nick ? moderator.nick : regularName;
+  async replyToUser(
+    moderator,
+    text,
+    replyAttachments = [],
+    isAnonymous = false,
+    messageReference = null
+  ) {
+    const regularName = config.useDisplaynames
+      ? moderator.user.globalName || moderator.user.username
+      : moderator.user.username;
+    let moderatorName =
+      config.useNicknames && moderator.nick ? moderator.nick : regularName;
     if (config.breakFormattingForNames) {
       moderatorName = moderatorName.replace(escapeFormattingRegex, "\\$&");
     }
 
-    const roleName = await getModeratorThreadDisplayRoleName(moderator, this.id);
+    const roleName = await getModeratorThreadDisplayRoleName(
+      moderator,
+      this.id
+    );
     /** @var {Eris.MessageReference|null} userMessageReference */
     let userMessageReference = null;
 
     // Handle replies
     if (config.relayInlineReplies && messageReference) {
-      const repliedTo = await this.getThreadMessageForMessageId(messageReference.messageID);
+      const repliedTo = await this.getThreadMessageForMessageId(
+        messageReference.messageID
+      );
       if (repliedTo) {
         userMessageReference = {
           channelID: repliedTo.dm_channel_id,
@@ -257,7 +298,10 @@ class Thread {
 
       let unknownSnippets = new Set();
       text = text.replace(
-        new RegExp(`${config.inlineSnippetStart}(\\s*\\S+?\\s*)${config.inlineSnippetEnd}`, "ig"),
+        new RegExp(
+          `${config.inlineSnippetStart}(\\s*\\S+?\\s*)${config.inlineSnippetEnd}`,
+          "ig"
+        ),
         (orig, trigger) => {
           trigger = trigger.trim();
           const snippet = snippetMap[trigger.toLowerCase()];
@@ -270,7 +314,11 @@ class Thread {
       );
 
       if (config.errorOnUnknownInlineSnippet && unknownSnippets.size > 0) {
-        this.postSystemMessage(`The following snippets used in the reply do not exist:\n${Array.from(unknownSnippets).join(", ")}`);
+        this.postSystemMessage(
+          `The following snippets used in the reply do not exist:\n${Array.from(
+            unknownSnippets
+          ).join(", ")}`
+        );
         return false;
       }
     }
@@ -282,12 +330,12 @@ class Thread {
     if (replyAttachments.length > 0) {
       for (const attachment of replyAttachments) {
         await Promise.all([
-          attachments.attachmentToDiscordFileObject(attachment).then(file => {
+          attachments.attachmentToDiscordFileObject(attachment).then((file) => {
             files.push(file);
           }),
-          attachments.saveAttachment(attachment).then(result => {
+          attachments.saveAttachment(attachment).then((result) => {
             attachmentLinks.push(result.url);
-          })
+          }),
         ]);
       }
     }
@@ -296,14 +344,18 @@ class Thread {
       message_type: THREAD_MESSAGE_TYPE.TO_USER,
       user_id: moderator.id,
       user_name: moderatorName,
-      body: text,
-      is_anonymous: (isAnonymous ? 1 : 0),
+      original_body: text,
+      is_anonymous: isAnonymous ? 1 : 0,
       role_name: roleName,
       attachments: attachmentLinks,
     });
-    const threadMessage = await this._addThreadMessageToDB(rawThreadMessage.getSQLProps());
+    const threadMessage = await this._addThreadMessageToDB(
+      rawThreadMessage.getSQLProps()
+    );
 
-    const dmContent = messageContentToAdvancedMessageContent(await formatters.formatStaffReplyDM(threadMessage));
+    const dmContent = messageContentToAdvancedMessageContent(
+      await formatters.formatStaffReplyDM(threadMessage)
+    );
     if (userMessageReference) {
       dmContent.messageReference = {
         ...userMessageReference,
@@ -311,7 +363,9 @@ class Thread {
       };
     }
 
-    const inboxContent = messageContentToAdvancedMessageContent(await formatters.formatStaffReplyThreadMessage(threadMessage));
+    const inboxContent = messageContentToAdvancedMessageContent(
+      await formatters.formatStaffReplyThreadMessage(threadMessage)
+    );
     if (messageReference) {
       inboxContent.messageReference = {
         channelID: messageReference.channelID,
@@ -321,9 +375,14 @@ class Thread {
     }
 
     // Because moderator replies have to be editable, we enforce them to fit within 1 message
-    if (! utils.messageContentIsWithinMaxLength(dmContent) || ! utils.messageContentIsWithinMaxLength(inboxContent)) {
+    if (
+      !utils.messageContentIsWithinMaxLength(dmContent) ||
+      !utils.messageContentIsWithinMaxLength(inboxContent)
+    ) {
       await this._deleteThreadMessage(threadMessage.id);
-      await this.postSystemMessage("Reply is too long! Make sure your reply is under 2000 characters total, moderator name in the reply included.");
+      await this.postSystemMessage(
+        "Reply is too long! Make sure your reply is under 2000 characters total, moderator name in the reply included."
+      );
       return false;
     }
 
@@ -333,29 +392,38 @@ class Thread {
       dmMessage = await this._sendDMToUser(dmContent, files);
     } catch (e) {
       await this._deleteThreadMessage(threadMessage.id);
-      await this.postSystemMessage(`Error while replying to user: ${e.message}`);
+      await this.postSystemMessage(
+        `Error while replying to user: ${e.message}`
+      );
       return false;
     }
 
     // Special case: "original" attachments
     if (config.attachmentStorage === "original") {
-      threadMessage.attachments = dmMessage.attachments.map(att => att.url);
+      threadMessage.attachments = dmMessage.attachments.map((att) => att.url);
     }
 
     threadMessage.dm_message_id = dmMessage.id;
-    await this._updateThreadMessage(threadMessage.id, threadMessage.getSQLProps());
+    await this._updateThreadMessage(
+      threadMessage.id,
+      threadMessage.getSQLProps()
+    );
 
     // Show the reply in the inbox thread
     const inboxMessage = await this._postToThreadChannel(inboxContent, files);
     if (inboxMessage) {
       threadMessage.inbox_message_id = inboxMessage.id;
-      await this._updateThreadMessage(threadMessage.id, { inbox_message_id: inboxMessage.id });
+      await this._updateThreadMessage(threadMessage.id, {
+        inbox_message_id: inboxMessage.id,
+      });
     }
 
     // Interrupt scheduled closing, if in progress
     if (this.scheduled_close_at) {
       await this.cancelScheduledClose();
-      await this.postSystemMessage("Cancelling scheduled closing of this thread due to new reply");
+      await this.postSystemMessage(
+        "Cancelling scheduled closing of this thread due to new reply"
+      );
     }
 
     // If enabled, set up a reply alert for the moderator after a slight delay
@@ -382,10 +450,9 @@ class Thread {
     hookResult = await callBeforeNewMessageReceivedHooks({
       user,
       opts,
-      message: opts.message
+      message: opts.message,
     });
     if (hookResult.cancelled) return;
-
     let messageContent = msg.content || "";
 
     // Prepare attachments
@@ -397,8 +464,13 @@ class Thread {
       const savedAttachment = await attachments.saveAttachment(attachment);
 
       // Forward small attachments (<2MB) as attachments, link to larger ones
-      if (config.relaySmallAttachmentsAsAttachments && attachment.size <= config.smallAttachmentLimit) {
-        const file = await attachments.attachmentToDiscordFileObject(attachment);
+      if (
+        config.relaySmallAttachmentsAsAttachments &&
+        attachment.size <= config.smallAttachmentLimit
+      ) {
+        const file = await attachments.attachmentToDiscordFileObject(
+          attachment
+        );
         attachmentFiles.push(file);
         smallAttachmentLinks.push(savedAttachment.url);
       }
@@ -410,7 +482,9 @@ class Thread {
     /** @var {Eris.MessageReference|null} messageReference */
     let messageReference = null;
     if (config.relayInlineReplies && msg.referencedMessage) {
-      const repliedTo = await this.getThreadMessageForMessageId(msg.referencedMessage.id);
+      const repliedTo = await this.getThreadMessageForMessageId(
+        msg.referencedMessage.id
+      );
       if (repliedTo) {
         messageReference = {
           channelID: this.channel_id,
@@ -423,18 +497,23 @@ class Thread {
     if (msg.activity) {
       let applicationName = msg.application && msg.application.name;
 
-      if (! applicationName && msg.activity.party_id.startsWith("spotify:")) {
+      if (!applicationName && msg.activity.party_id.startsWith("spotify:")) {
         applicationName = "Spotify";
       }
 
-      if (! applicationName) {
+      if (!applicationName) {
         applicationName = "Unknown Application";
       }
 
       let activityText;
-      if (msg.activity.type === DISCORD_MESSAGE_ACTIVITY_TYPES.JOIN || msg.activity.type === DISCORD_MESSAGE_ACTIVITY_TYPES.JOIN_REQUEST) {
+      if (
+        msg.activity.type === DISCORD_MESSAGE_ACTIVITY_TYPES.JOIN ||
+        msg.activity.type === DISCORD_MESSAGE_ACTIVITY_TYPES.JOIN_REQUEST
+      ) {
         activityText = "join a game";
-      } else if (msg.activity.type === DISCORD_MESSAGE_ACTIVITY_TYPES.SPECTATE) {
+      } else if (
+        msg.activity.type === DISCORD_MESSAGE_ACTIVITY_TYPES.SPECTATE
+      ) {
         activityText = "spectate";
       } else if (msg.activity.type === DISCORD_MESSAGE_ACTIVITY_TYPES.LISTEN) {
         activityText = "listen along";
@@ -447,9 +526,9 @@ class Thread {
     }
 
     if (msg.stickerItems && msg.stickerItems.length) {
-      const stickerLines = msg.stickerItems.map(sticker => {
-        return `*Sent sticker "${sticker.name}":* https://media.discordapp.net/stickers/${sticker.id}.webp?size=160`
-      })
+      const stickerLines = msg.stickerItems.map((sticker) => {
+        return `*Sent sticker "${sticker.name}":* https://media.discordapp.net/stickers/${sticker.id}.webp?size=160`;
+      });
 
       messageContent += "\n\n" + stickerLines.join("\n");
     }
@@ -460,8 +539,10 @@ class Thread {
     let threadMessage = new ThreadMessage({
       message_type: THREAD_MESSAGE_TYPE.FROM_USER,
       user_id: this.user_id,
-      user_name: config.useDisplaynames ? msg.author.globalName || msg.author.username : msg.author.username,
-      body: messageContent,
+      user_name: config.useDisplaynames
+        ? msg.author.globalName || msg.author.username
+        : msg.author.username,
+      original_body: messageContent,
       is_anonymous: 0,
       dm_message_id: msg.id,
       dm_channel_id: msg.channel.id,
@@ -469,10 +550,15 @@ class Thread {
       small_attachments: smallAttachmentLinks,
     });
 
-    threadMessage = await this._addThreadMessageToDB(threadMessage.getSQLProps());
+    threadMessage = await this._addThreadMessageToDB(
+      threadMessage.getSQLProps()
+    );
 
     // Show user reply in the inbox thread
-    const inboxContent = messageContentToAdvancedMessageContent(await formatters.formatUserReplyThreadMessage(threadMessage));
+    const inboxContent = messageContentToAdvancedMessageContent(
+      await formatters.formatUserReplyThreadMessage(threadMessage)
+    );
+
     if (messageReference) {
       inboxContent.messageReference = {
         channelID: messageReference.channelID,
@@ -480,9 +566,14 @@ class Thread {
         failIfNotExists: false,
       };
     }
-    const inboxMessage = await this._postToThreadChannel(inboxContent, attachmentFiles);
+    const inboxMessage = await this._postToThreadChannel(
+      inboxContent,
+      attachmentFiles
+    );
     if (inboxMessage) {
-      await this._updateThreadMessage(threadMessage.id, { inbox_message_id: inboxMessage.id });
+      await this._updateThreadMessage(threadMessage.id, {
+        inbox_message_id: inboxMessage.id,
+      });
     }
 
     if (config.reactOnSeen) {
@@ -493,29 +584,35 @@ class Thread {
     await callAfterNewMessageReceivedHooks({
       user,
       opts,
-      message: opts.message
+      message: opts.message,
     });
 
     // Interrupt scheduled closing, if in progress
     if (this.scheduled_close_at) {
       await this.cancelScheduledClose();
-      await this.postSystemMessage(`<@!${this.scheduled_close_id}> Thread that was scheduled to be closed got a new reply. Cancelling.`, {
-        allowedMentions: {
-          users: [this.scheduled_close_id],
-        },
-      });
+      await this.postSystemMessage(
+        `<@!${this.scheduled_close_id}> Thread that was scheduled to be closed got a new reply. Cancelling.`,
+        {
+          allowedMentions: {
+            users: [this.scheduled_close_id],
+          },
+        }
+      );
     }
 
-    if (this.alert_ids && ! skipAlert) {
+    if (this.alert_ids && !skipAlert) {
       const ids = this.alert_ids.split(",");
-      const mentionsStr = ids.map(id => `<@!${id}> `).join("");
+      const mentionsStr = ids.map((id) => `<@!${id}> `).join("");
 
       await this.deleteAlerts();
-      await this.postSystemMessage(`${mentionsStr}New message from ${this.user_name}`, {
-        allowedMentions: {
-          users: ids,
-        },
-      });
+      await this.postSystemMessage(
+        `${mentionsStr}New message from ${this.user_name}`,
+        {
+          allowedMentions: {
+            users: ids,
+          },
+        }
+      );
     }
   }
 
@@ -541,11 +638,13 @@ class Thread {
       message_type: THREAD_MESSAGE_TYPE.SYSTEM,
       user_id: null,
       user_name: "",
-      body: text,
+      original_body: text,
       is_anonymous: 0,
     });
 
-    const content = messageContentToAdvancedMessageContent(await formatters.formatSystemThreadMessage(threadMessage));
+    const content = messageContentToAdvancedMessageContent(
+      await formatters.formatSystemThreadMessage(threadMessage)
+    );
     content.allowedMentions = opts.allowedMentions;
     if (opts.messageReference) {
       content.messageReference = {
@@ -556,7 +655,9 @@ class Thread {
     const msg = await this._postToThreadChannel(content);
 
     threadMessage.inbox_message_id = msg.id;
-    const finalThreadMessage = await this._addThreadMessageToDB(threadMessage.getSQLProps());
+    const finalThreadMessage = await this._addThreadMessageToDB(
+      threadMessage.getSQLProps()
+    );
 
     return {
       message: msg,
@@ -573,7 +674,7 @@ class Thread {
       message_type: THREAD_MESSAGE_TYPE.SYSTEM,
       user_id: null,
       user_name: "",
-      body: text,
+      original_body: text,
       is_anonymous: 0,
     });
     return this._addThreadMessageToDB(threadMessage.getSQLProps());
@@ -594,7 +695,7 @@ class Thread {
       message_type: THREAD_MESSAGE_TYPE.SYSTEM_TO_USER,
       user_id: null,
       user_name: "",
-      body: text,
+      original_body: text,
       is_anonymous: 0,
     });
 
@@ -602,8 +703,13 @@ class Thread {
     const dmMsg = await this._sendDMToUser(dmContent);
 
     if (opts.postToThreadChannel !== false) {
-      const inboxContent = await formatters.formatSystemToUserThreadMessage(threadMessage);
-      const finalInboxContent = typeof inboxContent === "string" ? {content: inboxContent} : inboxContent;
+      const inboxContent = await formatters.formatSystemToUserThreadMessage(
+        threadMessage
+      );
+      const finalInboxContent =
+        typeof inboxContent === "string"
+          ? { content: inboxContent }
+          : inboxContent;
       finalInboxContent.allowedMentions = opts.allowedMentions;
       const inboxMsg = await this._postToThreadChannel(inboxContent);
       threadMessage.inbox_message_id = inboxMsg.id;
@@ -633,10 +739,12 @@ class Thread {
     return this._addThreadMessageToDB({
       message_type: THREAD_MESSAGE_TYPE.CHAT,
       user_id: msg.author.id,
-      user_name: config.useDisplaynames ? msg.author.globalName || msg.author.username : msg.author.username,
-      body: msg.content,
+      user_name: config.useDisplaynames
+        ? msg.author.globalName || msg.author.username
+        : msg.author.username,
+      original_body: msg.content,
       is_anonymous: 0,
-      dm_message_id: msg.id
+      dm_message_id: msg.id,
     });
   }
 
@@ -644,10 +752,12 @@ class Thread {
     return this._addThreadMessageToDB({
       message_type: THREAD_MESSAGE_TYPE.COMMAND,
       user_id: msg.author.id,
-      user_name: config.useDisplaynames ? msg.author.globalName || msg.author.username : msg.author.username,
-      body: msg.content,
+      user_name: config.useDisplaynames
+        ? msg.author.globalName || msg.author.username
+        : msg.author.username,
+      original_body: msg.content,
       is_anonymous: 0,
-      dm_message_id: msg.id
+      dm_message_id: msg.id,
     });
   }
 
@@ -659,9 +769,7 @@ class Thread {
     await knex("thread_messages")
       .where("thread_id", this.id)
       .where("dm_message_id", msg.id)
-      .update({
-        body: msg.content
-      });
+      .update({ current_body: msg.content });
   }
 
   /**
@@ -685,7 +793,7 @@ class Thread {
       .orderBy("id", "ASC")
       .select();
 
-    return threadMessages.map(row => new ThreadMessage(row));
+    return threadMessages.map((row) => new ThreadMessage(row));
   }
 
   /**
@@ -694,14 +802,14 @@ class Thread {
    */
   async getThreadMessageForMessageId(messageId) {
     const data = await knex("thread_messages")
-      .where(function() {
-        this.where("dm_message_id", messageId)
-        this.orWhere("inbox_message_id", messageId)
+      .where(function () {
+        this.where("dm_message_id", messageId);
+        this.orWhere("inbox_message_id", messageId);
       })
       .andWhere("thread_id", this.id)
       .first();
 
-    return (data ? new ThreadMessage(data) : null);
+    return data ? new ThreadMessage(data) : null;
   }
 
   async findThreadMessageByDmMessageId(messageId) {
@@ -719,16 +827,16 @@ class Thread {
   async getLatestThreadMessage() {
     const threadMessage = await knex("thread_messages")
       .where("thread_id", this.id)
-      .andWhere(function() {
+      .andWhere(function () {
         this.where("message_type", THREAD_MESSAGE_TYPE.FROM_USER)
           .orWhere("message_type", THREAD_MESSAGE_TYPE.TO_USER)
-          .orWhere("message_type", THREAD_MESSAGE_TYPE.SYSTEM_TO_USER)
+          .orWhere("message_type", THREAD_MESSAGE_TYPE.SYSTEM_TO_USER);
       })
       .orderBy("created_at", "DESC")
       .orderBy("id", "DESC")
       .first();
 
-      return threadMessage;
+    return threadMessage;
   }
 
   /**
@@ -748,7 +856,7 @@ class Thread {
    * @returns {Promise<void>}
    */
   async close(suppressSystemMessage = false, silent = false) {
-    if (! suppressSystemMessage) {
+    if (!suppressSystemMessage) {
       console.log(`Closing thread ${this.id}`);
 
       if (silent) {
@@ -760,11 +868,9 @@ class Thread {
 
     // Update DB status
     this.status = THREAD_STATUS.CLOSED;
-    await knex("threads")
-      .where("id", this.id)
-      .update({
-        status: THREAD_STATUS.CLOSED
-      });
+    await knex("threads").where("id", this.id).update({
+      status: THREAD_STATUS.CLOSED,
+    });
 
     // Delete channel
     const channel = bot.getChannel(this.channel_id);
@@ -788,8 +894,10 @@ class Thread {
       .update({
         scheduled_close_at: time,
         scheduled_close_id: user.id,
-        scheduled_close_name: config.useDisplaynames ? user.globalName || user.username : user.username,
-        scheduled_close_silent: silent
+        scheduled_close_name: config.useDisplaynames
+          ? user.globalName || user.username
+          : user.username,
+        scheduled_close_silent: silent,
       });
 
     await callAfterThreadCloseScheduledHooks({ thread: this });
@@ -799,14 +907,12 @@ class Thread {
    * @returns {Promise<void>}
    */
   async cancelScheduledClose() {
-    await knex("threads")
-      .where("id", this.id)
-      .update({
-        scheduled_close_at: null,
-        scheduled_close_id: null,
-        scheduled_close_name: null,
-        scheduled_close_silent: null
-      });
+    await knex("threads").where("id", this.id).update({
+      scheduled_close_at: null,
+      scheduled_close_id: null,
+      scheduled_close_name: null,
+      scheduled_close_silent: null,
+    });
 
     await callAfterThreadCloseScheduleCanceledHooks({ thread: this });
   }
@@ -815,25 +921,21 @@ class Thread {
    * @returns {Promise<void>}
    */
   async suspend() {
-    await knex("threads")
-      .where("id", this.id)
-      .update({
-        status: THREAD_STATUS.SUSPENDED,
-        scheduled_suspend_at: null,
-        scheduled_suspend_id: null,
-        scheduled_suspend_name: null
-      });
+    await knex("threads").where("id", this.id).update({
+      status: THREAD_STATUS.SUSPENDED,
+      scheduled_suspend_at: null,
+      scheduled_suspend_id: null,
+      scheduled_suspend_name: null,
+    });
   }
 
   /**
    * @returns {Promise<void>}
    */
   async unsuspend() {
-    await knex("threads")
-      .where("id", this.id)
-      .update({
-        status: THREAD_STATUS.OPEN
-      });
+    await knex("threads").where("id", this.id).update({
+      status: THREAD_STATUS.OPEN,
+    });
   }
 
   /**
@@ -847,7 +949,9 @@ class Thread {
       .update({
         scheduled_suspend_at: time,
         scheduled_suspend_id: user.id,
-        scheduled_suspend_name: config.useDisplaynames ? user.globalName || user.username : user.username,
+        scheduled_suspend_name: config.useDisplaynames
+          ? user.globalName || user.username
+          : user.username,
       });
   }
 
@@ -855,13 +959,11 @@ class Thread {
    * @returns {Promise<void>}
    */
   async cancelScheduledSuspend() {
-    await knex("threads")
-      .where("id", this.id)
-      .update({
-        scheduled_suspend_at: null,
-        scheduled_suspend_id: null,
-        scheduled_suspend_name: null
-      });
+    await knex("threads").where("id", this.id).update({
+      scheduled_suspend_at: null,
+      scheduled_suspend_id: null,
+      scheduled_suspend_name: null,
+    });
   }
 
   /**
@@ -876,20 +978,18 @@ class Thread {
     alerts = alerts.alert_ids;
 
     if (alerts == null) {
-      alerts = [userId]
+      alerts = [userId];
     } else {
       alerts = alerts.split(",");
-      if (! alerts.includes(userId)) {
+      if (!alerts.includes(userId)) {
         alerts.push(userId);
       }
     }
 
     alerts = alerts.join(",");
-    await knex("threads")
-      .where("id", this.id)
-      .update({
-        alert_ids: alerts
-      });
+    await knex("threads").where("id", this.id).update({
+      alert_ids: alerts,
+    });
   }
 
   /*
@@ -921,22 +1021,18 @@ class Thread {
       alerts = alerts.join(",");
     }
 
-    await knex("threads")
-      .where("id", this.id)
-      .update({
-        alert_ids: alerts
-      });
+    await knex("threads").where("id", this.id).update({
+      alert_ids: alerts,
+    });
   }
 
   /**
    * @returns {Promise<void>}
    */
   async deleteAlerts() {
-    await knex("threads")
-      .where("id", this.id)
-      .update({
-        alert_ids: null
-      })
+    await knex("threads").where("id", this.id).update({
+      alert_ids: null,
+    });
   }
 
   /**
@@ -950,40 +1046,60 @@ class Thread {
   async editStaffReply(moderator, threadMessage, newText, opts = {}) {
     const newThreadMessage = new ThreadMessage({
       ...threadMessage.getSQLProps(),
-      body: newText,
+      original_body: newText,
     });
 
-    const formattedThreadMessage = await formatters.formatStaffReplyThreadMessage(newThreadMessage);
+    const formattedThreadMessage =
+      await formatters.formatStaffReplyThreadMessage(newThreadMessage);
     const formattedDM = await formatters.formatStaffReplyDM(newThreadMessage);
 
     // Same restriction as in replies. Because edits could theoretically change the number of messages a reply takes, we enforce replies
     // to fit within 1 message to avoid the headache and issues caused by that.
-    if (! utils.messageContentIsWithinMaxLength(formattedDM) || ! utils.messageContentIsWithinMaxLength(formattedThreadMessage)) {
-      await this.postSystemMessage("Edited reply is too long! Make sure the edit is under 2000 characters total, moderator name in the reply included.");
+    if (
+      !utils.messageContentIsWithinMaxLength(formattedDM) ||
+      !utils.messageContentIsWithinMaxLength(formattedThreadMessage)
+    ) {
+      await this.postSystemMessage(
+        "Edited reply is too long! Make sure the edit is under 2000 characters total, moderator name in the reply included."
+      );
       return false;
     }
 
-    await bot.editMessage(threadMessage.dm_channel_id, threadMessage.dm_message_id, formattedDM);
-    await bot.editMessage(this.channel_id, threadMessage.inbox_message_id, formattedThreadMessage);
+    await bot.editMessage(
+      threadMessage.dm_channel_id,
+      threadMessage.dm_message_id,
+      formattedDM
+    );
+    await bot.editMessage(
+      this.channel_id,
+      threadMessage.inbox_message_id,
+      formattedThreadMessage
+    );
 
-    if (! opts.quiet) {
+    if (!opts.quiet) {
       const editThreadMessage = new ThreadMessage({
         message_type: THREAD_MESSAGE_TYPE.REPLY_EDITED,
         user_id: null,
         user_name: "",
-        body: "",
+        original_body: "",
         is_anonymous: 0,
       });
-      editThreadMessage.setMetadataValue("originalThreadMessage", threadMessage);
+      editThreadMessage.setMetadataValue(
+        "originalThreadMessage",
+        threadMessage
+      );
       editThreadMessage.setMetadataValue("newBody", newText);
 
-      const threadNotification = await formatters.formatStaffReplyEditNotificationThreadMessage(editThreadMessage);
+      const threadNotification =
+        await formatters.formatStaffReplyEditNotificationThreadMessage(
+          editThreadMessage
+        );
       const inboxMessage = await this._postToThreadChannel(threadNotification);
       editThreadMessage.inbox_message_id = inboxMessage.id;
       await this._addThreadMessageToDB(editThreadMessage.getSQLProps());
     }
 
-    await this._updateThreadMessage(threadMessage.id, { body: newText });
+    await this._updateThreadMessage(threadMessage.id, { original_body: newText });
     return true;
   }
 
@@ -995,20 +1111,29 @@ class Thread {
    * @returns {Promise<void>}
    */
   async deleteStaffReply(moderator, threadMessage, opts = {}) {
-    await bot.deleteMessage(threadMessage.dm_channel_id, threadMessage.dm_message_id);
+    await bot.deleteMessage(
+      threadMessage.dm_channel_id,
+      threadMessage.dm_message_id
+    );
     await bot.deleteMessage(this.channel_id, threadMessage.inbox_message_id);
 
-    if (! opts.quiet) {
+    if (!opts.quiet) {
       const deletionThreadMessage = new ThreadMessage({
         message_type: THREAD_MESSAGE_TYPE.REPLY_DELETED,
         user_id: null,
         user_name: "",
-        body: "",
+        original_body: "",
         is_anonymous: 0,
       });
-      deletionThreadMessage.setMetadataValue("originalThreadMessage", threadMessage);
+      deletionThreadMessage.setMetadataValue(
+        "originalThreadMessage",
+        threadMessage
+      );
 
-      const threadNotification = await formatters.formatStaffReplyDeletionNotificationThreadMessage(deletionThreadMessage);
+      const threadNotification =
+        await formatters.formatStaffReplyDeletionNotificationThreadMessage(
+          deletionThreadMessage
+        );
       const inboxMessage = await this._postToThreadChannel(threadNotification);
       deletionThreadMessage.inbox_message_id = inboxMessage.id;
       await this._addThreadMessageToDB(deletionThreadMessage.getSQLProps());
@@ -1028,12 +1153,10 @@ class Thread {
 
     const { log_storage_type, log_storage_data } = this.getSQLProps();
 
-    await knex("threads")
-      .where("id", this.id)
-      .update({
-        log_storage_type,
-        log_storage_data,
-      });
+    await knex("threads").where("id", this.id).update({
+      log_storage_type,
+      log_storage_data,
+    });
   }
 
   /**
@@ -1045,11 +1168,9 @@ class Thread {
     this.metadata = this.metadata || {};
     this.metadata[key] = value;
 
-    await knex("threads")
-      .where("id", this.id)
-      .update({
-        metadata: this.getSQLProps().metadata,
-      });
+    await knex("threads").where("id", this.id).update({
+      metadata: this.getSQLProps().metadata,
+    });
   }
 
   /**
@@ -1078,20 +1199,22 @@ class Thread {
     if (await isBlocked(this.user_id)) return;
 
     const dmChannel = await bot.getDMChannel(this.user_id);
-    if (! dmChannel) return;
+    if (!dmChannel) return;
 
     const lastMessageId = (await this.getLatestThreadMessage()).dm_message_id;
     let messages = (await dmChannel.getMessages(50, null, lastMessageId, null))
       .reverse() // We reverse the array to send the messages in the proper order - Discord returns them newest to oldest
-      .filter(msg => msg.author.id === this.user_id); // Make sure we're not recovering bot or system messages
+      .filter((msg) => msg.author.id === this.user_id); // Make sure we're not recovering bot or system messages
 
     if (messages.length === 0) return;
 
-    await this.postSystemMessage(`📥 Recovering ${messages.length} message(s) sent by user during bot downtime!`);
+    await this.postSystemMessage(
+      `📥 Recovering ${messages.length} message(s) sent by user during bot downtime!`
+    );
 
     let isFirst = true;
     for (const msg of messages) {
-      await this.receiveUserReply(msg, ! isFirst);
+      await this.receiveUserReply(msg, !isFirst);
       isFirst = false;
     }
   }

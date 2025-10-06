@@ -220,7 +220,10 @@ module.exports = function ({ formats, webserver, config }) {
               "originalThreadMessage"
             );
             payload.header += ` [REPLY EDITED] ${originalThreadMessage.user_name} edited reply ${originalThreadMessage.message_number}`;
-            payload.content += `**Before:**\n${originalThreadMessage.body}`;
+            payload.content += `**Before:**\n${
+              originalThreadMessage.current_body ??
+              originalThreadMessage.original_body
+            }`;
             payload.content += `\n\n**After:**\n${message.getMetadataValue(
               "newBody"
             )}`;
@@ -231,7 +234,10 @@ module.exports = function ({ formats, webserver, config }) {
               "originalThreadMessage"
             );
             payload.header += ` [REPLY DELETED] ${originalThreadMessage.user_name} deleted reply ${originalThreadMessage.message_number}`;
-            payload.content += `${originalThreadMessage.body}`;
+            payload.content += `${
+              originalThreadMessage.current_body ??
+              originalThreadMessage.original_body
+            }`;
           } else {
             payload.header += ` [${message.user_name}]`;
             payload.content += message.body;
