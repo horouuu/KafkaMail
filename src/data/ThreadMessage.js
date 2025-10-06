@@ -1,5 +1,5 @@
 const utils = require("../utils");
-const {THREAD_MESSAGE_TYPE} = require("./constants");
+const { THREAD_MESSAGE_TYPE } = require("./constants");
 
 /**
  * @property {Number} id
@@ -9,7 +9,8 @@ const {THREAD_MESSAGE_TYPE} = require("./constants");
  * @property {String} user_id
  * @property {String} user_name
  * @property {String} role_name
- * @property {String} body
+ * @property {String} original_body
+ * @property {String} current_body
  * @property {Number} is_anonymous
  * @property {String[]} attachments
  * @property {String[]} small_attachments The subset of attachments that were relayed when relaySmallAttachmentsAsAttachments is enabled
@@ -68,11 +69,9 @@ class ThreadMessage {
     this.metadata[key] = value;
 
     if (this.id) {
-      await knex("thread_messages")
-        .where("id", this.id)
-        .update({
-          metadata: this.getSQLProps().metadata,
-        });
+      await knex("thread_messages").where("id", this.id).update({
+        metadata: this.getSQLProps().metadata,
+      });
     }
   }
 
