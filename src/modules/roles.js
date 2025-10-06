@@ -107,12 +107,6 @@ module.exports = ({ bot, knex, config, commands }) => {
           `No role in the server matches the input \`${args.role}\`.`
         );
         return;
-      } else if (!out.role) {
-        // Uh-oh.
-        thread.postSystemMessage(
-          `Something went wrong. Please contact a developer for help..`
-        );
-        return;
       }
 
       const role = out.role;
