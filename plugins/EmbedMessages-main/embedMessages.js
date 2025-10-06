@@ -184,7 +184,7 @@ module.exports = async function ({ config, bot, formats }) {
   const replyToUserFormatter = function (threadMessage) {
     const userId = threadMessage.user_id;
     const roleName = threadMessage.role_name || config.fallbackRoleName || "";
-    const embed = { description: threadMessage.body, color: settings.get(SETTING_NAMES.STAFF_REPLY_DM_COLOR) };
+    const embed = { description: threadMessage.original_body, color: settings.get(SETTING_NAMES.STAFF_REPLY_DM_COLOR) };
 
     if (!threadMessage.is_anonymous) {
       embed.author = {
@@ -227,7 +227,7 @@ module.exports = async function ({ config, bot, formats }) {
     const userId = threadMessage.user_id;
     const roleName = threadMessage.role_name || config.fallbackRoleName || "";
     const embed = {
-      description: threadMessage.body,
+      description: threadMessage.original_body,
       color: settings.get(SETTING_NAMES.STAFF_REPLY_THREAD_COLOR),
       footer: { text: `#${threadMessage.message_number}` },
     };
@@ -271,7 +271,7 @@ module.exports = async function ({ config, bot, formats }) {
 
   const userReplyFormatter = function (threadMessage) {
     const userId = threadMessage.user_id;
-    const embed = { description: threadMessage.body, color: settings.get(SETTING_NAMES.USER_REPLY_THREAD_COLOR) };
+    const embed = { description: threadMessage.original_body, color: settings.get(SETTING_NAMES.USER_REPLY_THREAD_COLOR) };
 
     embed.author = {
       name: `${threadMessage.user_name}`,
@@ -304,7 +304,7 @@ module.exports = async function ({ config, bot, formats }) {
   };
 
   const systemToUserDmFormatter = function (threadMessage) {
-    const embed = { description: threadMessage.body, color: settings.get(SETTING_NAMES.SYSTEM_USER_DM_COLOR) };
+    const embed = { description: threadMessage.original_body, color: settings.get(SETTING_NAMES.SYSTEM_USER_DM_COLOR) };
 
     embed.author = {
       name: systemName,
@@ -337,7 +337,7 @@ module.exports = async function ({ config, bot, formats }) {
   };
 
   const systemToUserThreadFormatter = function (threadMessage) {
-    const embed = { description: threadMessage.body, color: settings.get(SETTING_NAMES.SYSTEM_USER_THREAD_COLOR) };
+    const embed = { description: threadMessage.original_body, color: settings.get(SETTING_NAMES.SYSTEM_USER_THREAD_COLOR) };
 
     embed.author = {
       name: systemName,
@@ -370,7 +370,7 @@ module.exports = async function ({ config, bot, formats }) {
   };
 
   const systemToStaffFormatter = function (threadMessage) {
-    const embed = { description: threadMessage.body, color: settings.get(SETTING_NAMES.SYSTEM_STAFF_COLOR) };
+    const embed = { description: threadMessage.original_body, color: settings.get(SETTING_NAMES.SYSTEM_STAFF_COLOR) };
 
     embed.author = {
       name: systemName,
@@ -396,7 +396,7 @@ module.exports = async function ({ config, bot, formats }) {
     }
 
     // We can't directly join the matched array since that results in "@Dark,108552944961454080"
-    const foundMentions = threadMessage.body.matchAll(mentionRegex);
+    const foundMentions = threadMessage.original_body.matchAll(mentionRegex);
     const properMentions = [];
     for (const men of foundMentions) {
       properMentions.push(men[0]);
