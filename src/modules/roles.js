@@ -170,10 +170,23 @@ module.exports = ({ bot, knex, config, commands }) => {
     "<role:string$>",
     async (msg, args, thread) => {
       const channel = await getOrFetchChannel(bot, msg.channel.id);
-      const role = resolveRoleInput(args.role);
-      if (!role || !msg.member.roles.includes(role.id)) {
+      const roleArr = resolveRoleInput(args.role);
+      const out = resolveRoleFromRoleArray(roleArr, args.role);
+
+      if (out.msg) {
+        channel.createMessage(out.msg);
+        return;
+      } else if (!out.role) {
         channel.createMessage(
-          "No matching role found. Make sure you have the role before trying to set it as your default display role."
+          `No role in the server matches the input \`${args.role}\`.`
+        );
+        return;
+      }
+
+      const role = out.role;
+      if (!msg.member.roles.includes(role.id)) {
+        channel.createMessage(
+          `You do not have the role \`${role.name}\` assigned to you. You can only set roles you own as the display role of the thread.`
         );
         return;
       }
