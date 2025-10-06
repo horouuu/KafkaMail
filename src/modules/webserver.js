@@ -20,7 +20,7 @@ function notfound(res) {
  */
 async function serveLogs(req, res) {
   const thread = await threads.findById(req.params.threadId);
-  if (! thread) return notfound(res);
+  if (!thread) return notfound(res);
 
   let threadMessages = await thread.getThreadMessages();
 
@@ -29,7 +29,9 @@ async function serveLogs(req, res) {
     verbose: Boolean(req.query.verbose),
   });
 
-  const contentType = formatLogResult.extra && formatLogResult.extra.contentType || "text/plain; charset=UTF-8";
+  const contentType =
+    (formatLogResult.extra && formatLogResult.extra.contentType) ||
+    "text/plain; charset=UTF-8";
 
   res.set("Content-Type", contentType);
   res.send(formatLogResult.content);
@@ -37,21 +39,27 @@ async function serveLogs(req, res) {
 
 function serveAttachments(req, res) {
   if (req.params.attachmentId.match(/^[0-9]+$/) === null) return notfound(res);
-  if (req.params.filename.match(/^[0-9a-z._-]+$/i) === null) return notfound(res);
+  if (req.params.filename.match(/^[0-9a-z._-]+$/i) === null)
+    return notfound(res);
 
-  const attachmentPath = attachments.getLocalAttachmentPath(req.params.attachmentId);
+  const attachmentPath = attachments.getLocalAttachmentPath(
+    req.params.attachmentId
+  );
   fs.access(attachmentPath, (err) => {
     if (err) return notfound(res);
 
     const filenameParts = req.params.filename.split(".");
-    const ext = (filenameParts.length > 1 ? filenameParts[filenameParts.length - 1] : "bin");
+    const ext =
+      filenameParts.length > 1
+        ? filenameParts[filenameParts.length - 1]
+        : "bin";
     const fileMime = mime.getType(ext);
 
     res.set("Content-Type", fileMime);
 
     const read = fs.createReadStream(attachmentPath);
     read.pipe(res);
-  })
+  });
 }
 
 const server = express();
@@ -60,7 +68,7 @@ server.use(helmet());
 server.get("/logs/:threadId", serveLogs);
 server.get("/attachments/:attachmentId/:filename", serveAttachments);
 
-server.on("error", err => {
+server.on("error", (err) => {
   console.log("[WARN] Web server error:", err.message);
 });
 

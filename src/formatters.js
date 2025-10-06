@@ -166,7 +166,10 @@ const defaultFormatters = {
 
     let content = `**${originalThreadMessage.user_name}** (\`${originalThreadMessage.user_id}\`) edited reply \`${originalThreadMessage.message_number}\``;
 
-    if (originalthreadMessage.original_body.length < 200 && newBody.length < 200) {
+    if (
+      originalthreadMessage.original_body.length < 200 &&
+      newBody.length < 200
+    ) {
       // Show edits of small messages inline
       content += ` from \`${utils.disableInlineCode(
         originalthreadMessage.original_body
@@ -197,7 +200,9 @@ const defaultFormatters = {
     } else {
       // Show the original content of deleted large messages in a code block
       content +=
-        ":\n```" + utils.disableCodeBlocks(originalthreadMessage.original_body) + "```";
+        ":\n```" +
+        utils.disableCodeBlocks(originalthreadMessage.original_body) +
+        "```";
     }
 
     return content;
@@ -247,8 +252,9 @@ const defaultFormatters = {
 
     const lines = threadMessages.map((message) => {
       // Legacy messages (from 2018) are the entire log in one message, so just serve them as they are
+      console.log(message);
       if (message.message_type === THREAD_MESSAGE_TYPE.LEGACY) {
-        return message.body;
+        return message.original_body;
       }
 
       let line = `[${moment
@@ -266,7 +272,7 @@ const defaultFormatters = {
       }
 
       if (message.message_type === THREAD_MESSAGE_TYPE.FROM_USER) {
-        line += ` [FROM USER] [${message.user_name}] ${message.body}`;
+        line += ` [FROM USER] [${message.user_name}] ${message.original_body}`;
       } else if (message.message_type === THREAD_MESSAGE_TYPE.TO_USER) {
         if (opts.verbose) {
           line += ` [TO USER] [${message.message_number || "0"}] [${
@@ -278,28 +284,28 @@ const defaultFormatters = {
 
         if (message.use_legacy_format) {
           // Legacy format (from pre-2.31.0) includes the role and username in the message body, so serve that as is
-          line += ` ${message.body}`;
+          line += ` ${message.original_body}`;
         } else if (message.is_anonymous) {
           if (message.role_name) {
-            line += ` (Anonymous) ${message.role_name}: ${message.body}`;
+            line += ` (Anonymous) ${message.role_name}: ${message.original_body}`;
           } else {
-            line += ` (Anonymous) Moderator: ${message.body}`;
+            line += ` (Anonymous) Moderator: ${message.original_body}`;
           }
         } else {
           if (message.role_name) {
-            line += ` (${message.role_name}) ${message.user_name}: ${message.body}`;
+            line += ` (${message.role_name}) ${message.user_name}: ${message.original_body}`;
           } else {
-            line += ` ${message.user_name}: ${message.body}`;
+            line += ` ${message.user_name}: ${message.original_body}`;
           }
         }
       } else if (message.message_type === THREAD_MESSAGE_TYPE.SYSTEM) {
-        line += ` [BOT] ${message.body}`;
+        line += ` [BOT] ${message.original_body}`;
       } else if (message.message_type === THREAD_MESSAGE_TYPE.SYSTEM_TO_USER) {
-        line += ` [BOT TO USER] ${message.body}`;
+        line += ` [BOT TO USER] ${message.original_body}`;
       } else if (message.message_type === THREAD_MESSAGE_TYPE.CHAT) {
-        line += ` [CHAT] [${message.user_name}] ${message.body}`;
+        line += ` [CHAT] [${message.user_name}] ${message.original_body}`;
       } else if (message.message_type === THREAD_MESSAGE_TYPE.COMMAND) {
-        line += ` [COMMAND] [${message.user_name}] ${message.body}`;
+        line += ` [COMMAND] [${message.user_name}] ${message.original_body}`;
       } else if (message.message_type === THREAD_MESSAGE_TYPE.REPLY_EDITED) {
         const originalThreadMessage = message.getMetadataValue(
           "originalThreadMessage"
@@ -314,7 +320,7 @@ const defaultFormatters = {
         line += ` [REPLY DELETED] ${originalThreadMessage.user_name} deleted reply ${originalThreadMessage.message_number}:`;
         line += `\n\n${originalthreadMessage.original_body}`;
       } else {
-        line += ` [${message.user_name}] ${message.body}`;
+        line += ` [${message.user_name}] ${message.original_body}`;
       }
 
       if (message.attachments.length) {
