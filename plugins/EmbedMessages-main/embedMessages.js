@@ -181,11 +181,34 @@ module.exports = async function ({ config, bot, formats }) {
     return pfp;
   }
 
+  // Parses all the attachments of the threadMessage and attaches them to the embed.
+  function parseAndAttachToEmbed(threadMessage, embed) {
+      if (threadMessage.attachments.length === 1) {
+      const url = threadMessage.attachments[0];
+      const noQueryUrl = new URL(url).origin + new URL(url).pathname;
+      if (
+        noQueryUrl.endsWith(".png")  ||
+        noQueryUrl.endsWith(".jpg") ||
+        noQueryUrl.endsWith(".gif")
+      ) {
+        embed.image = {
+          url: noQueryUrl,
+        };
+      } else {
+        embed.description += `\n${noQueryUrl}`;
+      }
+    } else {
+      for (const link of threadMessage.attachments) {
+        embed.description += `\n${link}`;
+      }
+    }
+  }
+
   const replyToUserFormatter = function (threadMessage) {
     const userId = threadMessage.user_id;
     const roleName = threadMessage.role_name || config.fallbackRoleName || "";
     const embed = { description: threadMessage.original_body, color: settings.get(SETTING_NAMES.STAFF_REPLY_DM_COLOR) };
-
+    
     if (!threadMessage.is_anonymous) {
       embed.author = {
         name: `${threadMessage.user_name} ${roleName != "" ? `(${roleName})` : ""}`.trim(),
@@ -198,23 +221,7 @@ module.exports = async function ({ config, bot, formats }) {
       };
     }
 
-    if (threadMessage.attachments.length === 1) {
-      if (
-        threadMessage.attachments[0].endsWith(".png") ||
-        threadMessage.attachments[0].endsWith(".jpg") ||
-        threadMessage.attachments[0].endsWith(".gif")
-      ) {
-        embed.image = {
-          url: threadMessage.attachments[0],
-        };
-      } else {
-        embed.description += `\n${threadMessage.attachments[0]}`;
-      }
-    } else {
-      for (const link of threadMessage.attachments) {
-        embed.description += `\n${link}`;
-      }
-    }
+    parseAndAttachToEmbed(threadMessage, embed);
 
     if (config.threadTimestamps && settings.get(SETTING_NAMES.STAFF_REPLY_DM_TIMESTAMP_ENABLE)) {
       embed.timestamp = moment().utc().toISOString();
@@ -244,23 +251,7 @@ module.exports = async function ({ config, bot, formats }) {
       };
     }
 
-    if (threadMessage.attachments.length === 1) {
-      if (
-        threadMessage.attachments[0].endsWith(".png") ||
-        threadMessage.attachments[0].endsWith(".jpg") ||
-        threadMessage.attachments[0].endsWith(".gif")
-      ) {
-        embed.image = {
-          url: threadMessage.attachments[0],
-        };
-      } else {
-        embed.description += `\n${threadMessage.attachments[0]}`;
-      }
-    } else {
-      for (const link of threadMessage.attachments) {
-        embed.description += `\n${link}`;
-      }
-    }
+    parseAndAttachToEmbed(threadMessage, embed);
 
     if (config.threadTimestamps) {
       embed.timestamp = moment().utc().toISOString();
@@ -271,24 +262,26 @@ module.exports = async function ({ config, bot, formats }) {
 
   const userReplyFormatter = function (threadMessage) {
     const userId = threadMessage.user_id;
-    const embed = { description: threadMessage.original_body, color: settings.get(SETTING_NAMES.USER_REPLY_THREAD_COLOR) };
-
+    const embed = { description: threadMessage.original_body, color: settings.get(SETTING_NAMES.USER_REPLY_THREAD_COLOR) }; 
     embed.author = {
       name: `${threadMessage.user_name}`,
       icon_url: getPfp(userId),
     };
 
+    
     if (threadMessage.attachments.length === 1) {
+      const url = threadMessage.attachments[0];
+      const noQueryUrl = new URL(url).origin + new URL(url).pathname;
       if (
-        threadMessage.attachments[0].endsWith(".png") ||
-        threadMessage.attachments[0].endsWith(".jpg") ||
-        threadMessage.attachments[0].endsWith(".gif")
+        noQueryUrl.endsWith(".png")  ||
+        noQueryUrl.endsWith(".jpg") ||
+        noQueryUrl.endsWith(".gif")
       ) {
         embed.image = {
-          url: threadMessage.attachments[0],
+          url: noQueryUrl,
         };
       } else {
-        embed.description += `\n${threadMessage.attachments[0]}`;
+        embed.description += `\n${noQueryUrl}`;
       }
     } else {
       for (const link of threadMessage.attachments) {
@@ -311,23 +304,7 @@ module.exports = async function ({ config, bot, formats }) {
       icon_url: bot.user.avatarURL,
     };
 
-    if (threadMessage.attachments.length === 1) {
-      if (
-        threadMessage.attachments[0].endsWith(".png") ||
-        threadMessage.attachments[0].endsWith(".jpg") ||
-        threadMessage.attachments[0].endsWith(".gif")
-      ) {
-        embed.image = {
-          url: threadMessage.attachments[0],
-        };
-      } else {
-        embed.description += `\n${threadMessage.attachments[0]}`;
-      }
-    } else {
-      for (const link of threadMessage.attachments) {
-        embed.description += `\n${link}`;
-      }
-    }
+    parseAndAttachToEmbed(threadMessage, embed);
 
     if (config.threadTimestamps && settings.get(SETTING_NAMES.STAFF_REPLY_DM_TIMESTAMP_ENABLE)) {
       embed.timestamp = moment().utc().toISOString();
@@ -344,23 +321,7 @@ module.exports = async function ({ config, bot, formats }) {
       icon_url: bot.user.avatarURL,
     };
 
-    if (threadMessage.attachments.length === 1) {
-      if (
-        threadMessage.attachments[0].endsWith(".png") ||
-        threadMessage.attachments[0].endsWith(".jpg") ||
-        threadMessage.attachments[0].endsWith(".gif")
-      ) {
-        embed.image = {
-          url: threadMessage.attachments[0],
-        };
-      } else {
-        embed.description += `\n${threadMessage.attachments[0]}`;
-      }
-    } else {
-      for (const link of threadMessage.attachments) {
-        embed.description += `\n${link}`;
-      }
-    }
+    parseAndAttachToEmbed(threadMessage, embed);
     
     if (config.threadTimestamps) {
       embed.timestamp = moment().utc().toISOString();
@@ -377,23 +338,7 @@ module.exports = async function ({ config, bot, formats }) {
       icon_url: bot.user.avatarURL,
     };
 
-    if (threadMessage.attachments.length === 1) {
-      if (
-        threadMessage.attachments[0].endsWith(".png") ||
-        threadMessage.attachments[0].endsWith(".jpg") ||
-        threadMessage.attachments[0].endsWith(".gif")
-      ) {
-        embed.image = {
-          url: threadMessage.attachments[0],
-        };
-      } else {
-        embed.description += `\n${threadMessage.attachments[0]}`;
-      }
-    } else {
-      for (const link of threadMessage.attachments) {
-        embed.description += `\n${link}`;
-      }
-    }
+    parseAndAttachToEmbed(threadMessage, embed);
 
     // We can't directly join the matched array since that results in "@Dark,108552944961454080"
     const foundMentions = threadMessage.original_body.matchAll(mentionRegex);
