@@ -2,7 +2,7 @@ const Eris = require("eris");
 const utils = require("./utils");
 const config = require("./cfg");
 const ThreadMessage = require("./data/ThreadMessage");
-const {THREAD_MESSAGE_TYPE} = require("./data/constants");
+const { THREAD_MESSAGE_TYPE } = require("./data/constants");
 const moment = require("moment");
 const bot = require("./bot");
 
@@ -101,25 +101,37 @@ const bot = require("./bot");
  */
 const defaultFormatters = {
   formatStaffReplyDM(threadMessage) {
-    const roleName = config.overrideRoleNameDisplay || threadMessage.role_name || config.fallbackRoleName;
+    const roleName =
+      config.overrideRoleNameDisplay ||
+      threadMessage.role_name ||
+      config.fallbackRoleName;
     const modInfo = threadMessage.is_anonymous
       ? roleName
-      : (roleName ? `(${roleName}) ${threadMessage.user_name}` : threadMessage.user_name);
+      : roleName
+      ? `(${roleName}) ${threadMessage.user_name}`
+      : threadMessage.user_name;
 
     return modInfo
-      ? `**${modInfo}:** ${threadMessage.body}`
-      : threadMessage.body;
+      ? `**${modInfo}:** ${threadMessage.original_body}`
+      : threadMessage.original_body;
   },
 
   formatStaffReplyThreadMessage(threadMessage) {
-    const roleName = config.overrideRoleNameDisplay || threadMessage.role_name || config.fallbackRoleName;
+    const roleName =
+      config.overrideRoleNameDisplay ||
+      threadMessage.role_name ||
+      config.fallbackRoleName;
     const modInfo = threadMessage.is_anonymous
-      ? (roleName ? `(Anonymous) (${threadMessage.user_name}) ${roleName}` : `(Anonymous) (${threadMessage.user_name})`)
-      : (roleName ? `(${roleName}) ${threadMessage.user_name}` : threadMessage.user_name);
+      ? roleName
+        ? `(Anonymous) (${threadMessage.user_name}) ${roleName}`
+        : `(Anonymous) (${threadMessage.user_name})`
+      : roleName
+      ? `(${roleName}) ${threadMessage.user_name}`
+      : threadMessage.user_name;
 
     let result = modInfo
-      ? `**${modInfo}:** ${threadMessage.body}`
-      : threadMessage.body;
+      ? `**${modInfo}:** ${threadMessage.original_body}`
+      : threadMessage.original_body;
 
     if (config.threadTimestamps) {
       const formattedTimestamp = utils.getTimestamp(threadMessage.created_at);
@@ -132,7 +144,7 @@ const defaultFormatters = {
   },
 
   formatUserReplyThreadMessage(threadMessage) {
-    let result = `**${threadMessage.user_name}:** ${threadMessage.body}`;
+    let result = `**${threadMessage.user_name}:** ${threadMessage.original_body}`;
 
     for (const link of threadMessage.attachments) {
       result += `\n\n${link}`;
@@ -146,19 +158,28 @@ const defaultFormatters = {
     return result;
   },
 
- formatStaffReplyEditNotificationThreadMessage(threadMessage) {
-    const originalThreadMessage = threadMessage.getMetadataValue("originalThreadMessage");
+  formatStaffReplyEditNotificationThreadMessage(threadMessage) {
+    const originalThreadMessage = threadMessage.getMetadataValue(
+      "originalThreadMessage"
+    );
     const newBody = threadMessage.getMetadataValue("newBody");
 
     let content = `**${originalThreadMessage.user_name}** (\`${originalThreadMessage.user_id}\`) edited reply \`${originalThreadMessage.message_number}\``;
 
-    if (originalThreadMessage.body.length < 200 && newBody.length < 200) {
+    if (
+      originalthreadMessage.original_body.length < 200 &&
+      newBody.length < 200
+    ) {
       // Show edits of small messages inline
-      content += ` from \`${utils.disableInlineCode(originalThreadMessage.body)}\` to \`${newBody}\``;
+      content += ` from \`${utils.disableInlineCode(
+        originalthreadMessage.original_body
+      )}\` to \`${newBody}\``;
     } else {
       // Show edits of long messages in two code blocks
       content += ":";
-      content += `\n\nBefore:\n\`\`\`${utils.disableCodeBlocks(originalThreadMessage.body)}\`\`\``;
+      content += `\n\nBefore:\n\`\`\`${utils.disableCodeBlocks(
+        originalthreadMessage.original_body
+      )}\`\`\``;
       content += `\nAfter:\n\`\`\`${utils.disableCodeBlocks(newBody)}\`\`\``;
     }
 
@@ -166,22 +187,29 @@ const defaultFormatters = {
   },
 
   formatStaffReplyDeletionNotificationThreadMessage(threadMessage) {
-    const originalThreadMessage = threadMessage.getMetadataValue("originalThreadMessage");
+    const originalThreadMessage = threadMessage.getMetadataValue(
+      "originalThreadMessage"
+    );
     let content = `**${originalThreadMessage.user_name}** (\`${originalThreadMessage.user_id}\`) deleted reply \`${originalThreadMessage.message_number}\``;
 
-    if (originalThreadMessage.body.length < 200) {
+    if (originalthreadMessage.original_body.length < 200) {
       // Show the original content of deleted small messages inline
-      content += ` (message content: \`${utils.disableInlineCode(originalThreadMessage.body)}\`)`;
+      content += ` (message content: \`${utils.disableInlineCode(
+        originalthreadMessage.original_body
+      )}\`)`;
     } else {
       // Show the original content of deleted large messages in a code block
-      content += ":\n```" + utils.disableCodeBlocks(originalThreadMessage.body) + "```";
+      content +=
+        ":\n```" +
+        utils.disableCodeBlocks(originalthreadMessage.original_body) +
+        "```";
     }
 
     return content;
   },
 
   formatSystemThreadMessage(threadMessage) {
-    let result = threadMessage.body;
+    let result = threadMessage.original_body;
 
     for (const link of threadMessage.attachments) {
       result += `\n\n${link}`;
@@ -191,7 +219,7 @@ const defaultFormatters = {
   },
 
   formatSystemToUserThreadMessage(threadMessage) {
-    let result = `**⚙️ ${bot.user.username}:** ${threadMessage.body}`;
+    let result = `**⚙️ ${bot.user.username}:** ${threadMessage.original_body}`;
 
     for (const link of threadMessage.attachments) {
       result += `\n\n${link}`;
@@ -201,7 +229,7 @@ const defaultFormatters = {
   },
 
   formatSystemToUserDM(threadMessage) {
-    let result = threadMessage.body;
+    let result = threadMessage.original_body;
 
     for (const link of threadMessage.attachments) {
       result += `\n\n${link}`;
@@ -212,23 +240,26 @@ const defaultFormatters = {
 
   formatLog(thread, threadMessages, opts = {}) {
     if (opts.simple) {
-      threadMessages = threadMessages.filter(message => {
+      threadMessages = threadMessages.filter((message) => {
         return (
-          message.message_type !== THREAD_MESSAGE_TYPE.SYSTEM
-          && message.message_type !== THREAD_MESSAGE_TYPE.SYSTEM_TO_USER
-          && message.message_type !== THREAD_MESSAGE_TYPE.CHAT
-          && message.message_type !== THREAD_MESSAGE_TYPE.COMMAND
+          message.message_type !== THREAD_MESSAGE_TYPE.SYSTEM &&
+          message.message_type !== THREAD_MESSAGE_TYPE.SYSTEM_TO_USER &&
+          message.message_type !== THREAD_MESSAGE_TYPE.CHAT &&
+          message.message_type !== THREAD_MESSAGE_TYPE.COMMAND
         );
       });
     }
 
-    const lines = threadMessages.map(message => {
+    const lines = threadMessages.map((message) => {
       // Legacy messages (from 2018) are the entire log in one message, so just serve them as they are
+      console.log(message);
       if (message.message_type === THREAD_MESSAGE_TYPE.LEGACY) {
-        return message.body;
+        return message.original_body;
       }
 
-      let line = `[${moment.utc(message.created_at).format("YYYY-MM-DD HH:mm:ss")}]`;
+      let line = `[${moment
+        .utc(message.created_at)
+        .format("YYYY-MM-DD HH:mm:ss")}]`;
 
       if (opts.verbose) {
         if (message.dm_channel_id) {
@@ -241,49 +272,55 @@ const defaultFormatters = {
       }
 
       if (message.message_type === THREAD_MESSAGE_TYPE.FROM_USER) {
-        line += ` [FROM USER] [${message.user_name}] ${message.body}`;
+        line += ` [FROM USER] [${message.user_name}] ${message.original_body}`;
       } else if (message.message_type === THREAD_MESSAGE_TYPE.TO_USER) {
         if (opts.verbose) {
-          line += ` [TO USER] [${message.message_number || "0"}] [${message.user_name}]`;
+          line += ` [TO USER] [${message.message_number || "0"}] [${
+            message.user_name
+          }]`;
         } else {
           line += ` [TO USER] [${message.user_name}]`;
         }
 
         if (message.use_legacy_format) {
           // Legacy format (from pre-2.31.0) includes the role and username in the message body, so serve that as is
-          line += ` ${message.body}`;
+          line += ` ${message.original_body}`;
         } else if (message.is_anonymous) {
           if (message.role_name) {
-            line += ` (Anonymous) ${message.role_name}: ${message.body}`;
+            line += ` (Anonymous) ${message.role_name}: ${message.original_body}`;
           } else {
-            line += ` (Anonymous) Moderator: ${message.body}`;
+            line += ` (Anonymous) Moderator: ${message.original_body}`;
           }
         } else {
           if (message.role_name) {
-            line += ` (${message.role_name}) ${message.user_name}: ${message.body}`;
+            line += ` (${message.role_name}) ${message.user_name}: ${message.original_body}`;
           } else {
-            line += ` ${message.user_name}: ${message.body}`;
+            line += ` ${message.user_name}: ${message.original_body}`;
           }
         }
       } else if (message.message_type === THREAD_MESSAGE_TYPE.SYSTEM) {
-        line += ` [BOT] ${message.body}`;
+        line += ` [BOT] ${message.original_body}`;
       } else if (message.message_type === THREAD_MESSAGE_TYPE.SYSTEM_TO_USER) {
-        line += ` [BOT TO USER] ${message.body}`;
+        line += ` [BOT TO USER] ${message.original_body}`;
       } else if (message.message_type === THREAD_MESSAGE_TYPE.CHAT) {
-        line += ` [CHAT] [${message.user_name}] ${message.body}`;
+        line += ` [CHAT] [${message.user_name}] ${message.original_body}`;
       } else if (message.message_type === THREAD_MESSAGE_TYPE.COMMAND) {
-        line += ` [COMMAND] [${message.user_name}] ${message.body}`;
+        line += ` [COMMAND] [${message.user_name}] ${message.original_body}`;
       } else if (message.message_type === THREAD_MESSAGE_TYPE.REPLY_EDITED) {
-        const originalThreadMessage = message.getMetadataValue("originalThreadMessage");
+        const originalThreadMessage = message.getMetadataValue(
+          "originalThreadMessage"
+        );
         line += ` [REPLY EDITED] ${originalThreadMessage.user_name} edited reply ${originalThreadMessage.message_number}:`;
-        line += `\n\nBefore:\n${originalThreadMessage.body}`;
+        line += `\n\nBefore:\n${originalthreadMessage.original_body}`;
         line += `\n\nAfter:\n${message.getMetadataValue("newBody")}`;
       } else if (message.message_type === THREAD_MESSAGE_TYPE.REPLY_DELETED) {
-        const originalThreadMessage = message.getMetadataValue("originalThreadMessage");
+        const originalThreadMessage = message.getMetadataValue(
+          "originalThreadMessage"
+        );
         line += ` [REPLY DELETED] ${originalThreadMessage.user_name} deleted reply ${originalThreadMessage.message_number}:`;
-        line += `\n\n${originalThreadMessage.body}`;
+        line += `\n\n${originalthreadMessage.original_body}`;
       } else {
-        line += ` [${message.user_name}] ${message.body}`;
+        line += ` [${message.user_name}] ${message.original_body}`;
       }
 
       if (message.attachments.length) {
@@ -330,7 +367,9 @@ const formatters = { ...defaultFormatters };
 module.exports = {
   formatters: new Proxy(formatters, {
     set() {
-      throw new Error("Please use the formatter setter functions instead of modifying the formatters directly");
+      throw new Error(
+        "Please use the formatter setter functions instead of modifying the formatters directly"
+      );
     },
   }),
 

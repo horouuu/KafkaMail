@@ -133,7 +133,7 @@ module.exports = function ({ formats, webserver, config }) {
 
           if (message.message_type === THREAD_MESSAGE_TYPE.LEGACY) {
             return {
-              content: message.body,
+              content: message.original_body,
               header: "[LEGACY]",
               colour: COLOUR_MAPPINGS[message.message_type],
               type: message.message_type,
@@ -147,57 +147,58 @@ module.exports = function ({ formats, webserver, config }) {
             attachments: [],
             message_type: message.message_type,
             timestamp: `${moment.utc(message.created_at).toISOString()}`,
+            edited: !!message.current_body,
           };
 
           if (message.message_type === THREAD_MESSAGE_TYPE.FROM_USER) {
             payload.header += ` [FROM USER] ${message.user_name}`;
-            payload.content += message.body;
+            payload.content += message.current_body ?? message.original_body;
           } else if (message.message_type === THREAD_MESSAGE_TYPE.TO_USER) {
             payload.header += ` [TO USER] ${message.user_name}`;
 
             if (message.use_legacy_format) {
               // Legacy format (from pre-2.31.0) includes the role and username in the message body, so serve that as is
-              payload.content += message.body;
+              payload.content += message.original_body;
             } else if (message.is_anonymous) {
               if (message.role_name) {
                 payload.header += `: (Anonymous) ${message.role_name}`;
-                payload.content += message.body;
+                payload.content += message.original_body;
               } else {
                 payload.header += ": (Anonymous) Moderator";
-                payload.content += message.body;
+                payload.content += message.original_body;
               }
             } else {
               if (message.role_name) {
                 payload.header += `: (${message.role_name}) ${message.user_name}`;
-                payload.content += message.body;
+                payload.content += message.original_body;
               } else {
                 payload.header += `: ${message.user_name}`;
-                payload.content += message.body;
+                payload.content += message.original_body;
               }
             }
           } else if (message.message_type === THREAD_MESSAGE_TYPE.SYSTEM) {
             payload.header += " [BOT]";
-            payload.content += message.body;
+            payload.content += message.original_body;
             if (metadata["Account Age"] === null) {
-              let match = ageRegex.exec(message.body);
+              let match = ageRegex.exec(message.original_body);
               if (match && match.groups) {
                 metadata["Account Age"] = match.groups.age;
               }
             }
             if (metadata["Nickname"] === null) {
-              let match = nicknameRegex.exec(message.body);
+              let match = nicknameRegex.exec(message.original_body);
               if (match && match.groups) {
                 metadata["Nickname"] = match.groups.nickname;
               }
             }
             if (metadata["Joined"] === null) {
-              let match = joinedRegex.exec(message.body);
+              let match = joinedRegex.exec(message.original_body);
               if (match && match.groups) {
                 metadata["Joined"] = match.groups.joined;
               }
             }
             if (metadata["Roles"] === null) {
-              let match = rolesRegex.exec(message.body);
+              let match = rolesRegex.exec(message.original_body);
               if (match && match.groups) {
                 metadata["Roles"] = match.groups.roles.split(", ");
               }
@@ -206,13 +207,13 @@ module.exports = function ({ formats, webserver, config }) {
             message.message_type === THREAD_MESSAGE_TYPE.SYSTEM_TO_USER
           ) {
             payload.header += " [BOT TO USER]";
-            payload.content += message.body;
+            payload.content += message.original_body;
           } else if (message.message_type === THREAD_MESSAGE_TYPE.CHAT) {
             payload.header += ` [CHAT] ${message.user_name}`;
-            payload.content += message.body;
+            payload.content += message.original_body;
           } else if (message.message_type === THREAD_MESSAGE_TYPE.COMMAND) {
             payload.header += ` [COMMAND] ${message.user_name}`;
-            payload.content += message.body;
+            payload.content += message.original_body;
           } else if (
             message.message_type === THREAD_MESSAGE_TYPE.REPLY_EDITED
           ) {
@@ -220,7 +221,10 @@ module.exports = function ({ formats, webserver, config }) {
               "originalThreadMessage"
             );
             payload.header += ` [REPLY EDITED] ${originalThreadMessage.user_name} edited reply ${originalThreadMessage.message_number}`;
-            payload.content += `**Before:**\n${originalThreadMessage.body}`;
+            payload.content += `**Before:**\n${
+              originalThreadMessage.current_body ??
+              originalThreadMessage.original_body
+            }`;
             payload.content += `\n\n**After:**\n${message.getMetadataValue(
               "newBody"
             )}`;
@@ -231,10 +235,13 @@ module.exports = function ({ formats, webserver, config }) {
               "originalThreadMessage"
             );
             payload.header += ` [REPLY DELETED] ${originalThreadMessage.user_name} deleted reply ${originalThreadMessage.message_number}`;
-            payload.content += `${originalThreadMessage.body}`;
+            payload.content += `${
+              originalThreadMessage.current_body ??
+              originalThreadMessage.original_body
+            }`;
           } else {
             payload.header += ` [${message.user_name}]`;
-            payload.content += message.body;
+            payload.content += message.original_body;
           }
 
           if (message.attachments.length) {

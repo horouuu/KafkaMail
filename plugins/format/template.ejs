@@ -87,7 +87,7 @@
         <% messages.forEach((message) => { %>
           <article class="message compact is-hoverable <%= message.colour %>" data-message-type="<%= message.type_mapping %>">
             <div class="message-body">
-              <p class="message-header-compact"><small><strong><%= message.header %></strong></small> <small><small><small><span class="timestamp" data="<%= message.timestamp %>" functor="toLocaleString"><%= message.timestamp %></span></small></small></small></p>
+              <p class="message-header-compact"><small><strong><%= message.header %></strong></small> <small><small><small><span class="timestamp" data="<%= message.timestamp %>" functor="toLocaleString"><%= message.timestamp %></span></small></small></small> <small><strong><%= message.edited ? "[EDITED]" : "" %></strong></small></p>
               <%- message.content.replace(/\n/g, "<br>") %>
               <% if (message.attachments.length) { %>
                 <% message.attachments.forEach((attachment, i) => { %>
