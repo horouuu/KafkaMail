@@ -147,11 +147,12 @@ module.exports = function ({ formats, webserver, config }) {
             attachments: [],
             message_type: message.message_type,
             timestamp: `${moment.utc(message.created_at).toISOString()}`,
+            edited: !!message.current_body,
           };
 
           if (message.message_type === THREAD_MESSAGE_TYPE.FROM_USER) {
             payload.header += ` [FROM USER] ${message.user_name}`;
-            payload.content += message.original_body;
+            payload.content += message.current_body ?? message.original_body;
           } else if (message.message_type === THREAD_MESSAGE_TYPE.TO_USER) {
             payload.header += ` [TO USER] ${message.user_name}`;
 
