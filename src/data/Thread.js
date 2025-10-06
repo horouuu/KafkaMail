@@ -331,6 +331,14 @@ class Thread {
       for (const attachment of replyAttachments) {
         await Promise.all([
           attachments.attachmentToDiscordFileObject(attachment).then((file) => {
+            const noQueryUrl =
+              new URL(attachment.url).origin + new URL(attachment.url).pathname;
+            if (
+              noQueryUrl.endsWith(".png") ||
+              noQueryUrl.endsWith(".jpg") ||
+              noQueryUrl.endsWith(".gif")
+            )
+              return;
             files.push(file);
           }),
           attachments.saveAttachment(attachment).then((result) => {
@@ -1099,7 +1107,9 @@ class Thread {
       await this._addThreadMessageToDB(editThreadMessage.getSQLProps());
     }
 
-    await this._updateThreadMessage(threadMessage.id, { original_body: newText });
+    await this._updateThreadMessage(threadMessage.id, {
+      original_body: newText,
+    });
     return true;
   }
 
