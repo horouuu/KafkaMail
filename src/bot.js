@@ -36,8 +36,13 @@ const SAFE_TO_IGNORE_ERROR_CODES = [
   "ECONNRESET", // Pretty much the same as above
 ];
 
-bot.on("error", err => {
+bot.on("error", (err) => {
   if (SAFE_TO_IGNORE_ERROR_CODES.includes(err.code)) {
+    return;
+  }
+
+  if (err.message === "Invalid channel ID: undefined") {
+    console.error(err);
     return;
   }
 
