@@ -15,8 +15,9 @@ let logChannel = null;
  * @returns {Eris~Guild}
  */
 function getInboxGuild() {
-  if (! inboxGuild) inboxGuild = bot.guilds.find(g => g.id === config.inboxServerId);
-  if (! inboxGuild) throw new BotError("The bot is not on the inbox server!");
+  if (!inboxGuild)
+    inboxGuild = bot.guilds.find((g) => g.id === config.inboxServerId);
+  if (!inboxGuild) throw new BotError("The bot is not on the inbox server!");
   return inboxGuild;
 }
 
@@ -25,7 +26,7 @@ function getInboxGuild() {
  */
 function getMainGuilds() {
   if (mainGuilds.length === 0) {
-    mainGuilds = bot.guilds.filter(g => config.mainServerId.includes(g.id));
+    mainGuilds = bot.guilds.filter((g) => config.mainServerId.includes(g.id));
   }
 
   if (mainGuilds.length !== config.mainServerId.length) {
@@ -47,12 +48,14 @@ function getLogChannel() {
   const _inboxGuild = getInboxGuild();
   const _logChannel = _inboxGuild.channels.get(config.logChannelId);
 
-  if (! _logChannel) {
+  if (!_logChannel) {
     throw new BotError("Log channel (logChannelId) not found!");
   }
 
-  if (! (_logChannel instanceof Eris.TextChannel)) {
-    throw new BotError("Make sure the logChannelId option is set to a text channel!");
+  if (!(_logChannel instanceof Eris.TextChannel)) {
+    throw new BotError(
+      "Make sure the logChannelId option is set to a text channel!"
+    );
   }
 
   return _logChannel;
@@ -65,7 +68,7 @@ function postLog(...args) {
 function postError(channel, str, opts = {}) {
   return channel.createMessage({
     ...opts,
-    content: `⚠ ${str}`
+    content: `⚠ ${str}`,
   });
 }
 
@@ -75,11 +78,11 @@ function postError(channel, str, opts = {}) {
  * @returns {boolean}
  */
 function isStaff(member) {
-  if (! member) return false;
+  if (!member) return false;
   if (config.inboxServerPermission.length === 0) return true;
   if (member.guild.ownerID === member.id) return true;
 
-  return config.inboxServerPermission.some(perm => {
+  return config.inboxServerPermission.some((perm) => {
     if (isSnowflake(perm)) {
       // If perm is a snowflake, check it against the member's user id and roles
       if (member.id === perm) return true;
@@ -101,7 +104,7 @@ function isStaff(member) {
  */
 async function messageIsOnInboxServer(client, msg) {
   const channel = await getOrFetchChannel(client, msg.channel.id);
-  if (! channel.guild) return false;
+  if (!channel.guild) return false;
   if (channel.guild.id !== getInboxGuild().id) return false;
   return true;
 }
@@ -114,10 +117,9 @@ async function messageIsOnInboxServer(client, msg) {
  */
 async function messageIsOnMainServer(client, msg) {
   const channel = await getOrFetchChannel(client, msg.channel.id);
-  if (! channel || ! channel.guild) return false;
+  if (!channel || !channel.guild) return false;
 
-  return getMainGuilds()
-    .some(g => channel.guild.id === g.id);
+  return getMainGuilds().some((g) => channel.guild.id === g.id);
 }
 
 /**
@@ -129,7 +131,9 @@ async function formatAttachment(attachment, attachmentUrl) {
   let filesize = attachment.size || 0;
   filesize /= 1024;
 
-  return `**Attachment:** ${attachment.filename} (${filesize.toFixed(1)}KB)\n${attachmentUrl}`;
+  return `**Attachment:** ${attachment.filename} (${filesize.toFixed(
+    1
+  )}KB)\n${attachmentUrl}`;
 }
 
 /**
@@ -138,7 +142,7 @@ async function formatAttachment(attachment, attachmentUrl) {
  * @returns {String|null}
  */
 function getUserMention(str) {
-  if (! str) return null;
+  if (!str) return null;
 
   str = str.trim();
 
@@ -168,7 +172,7 @@ function getTimestamp(...momentArgs) {
  * @returns {String}
  */
 function disableLinkPreviews(str) {
-  return str.replace(/(^|[^<])(https?:\/\/\S+)/ig, "$1<$2>");
+  return str.replace(/(^|[^<])(https?:\/\/\S+)/gi, "$1<$2>");
 }
 
 /** @var {Promise<string>|null} cachedIp */
@@ -178,16 +182,15 @@ let cachedIpPromise = null;
  * @returns {Promise<string>}
  */
 async function getSelfIp() {
-  if (! cachedIpPromise) {
+  if (!cachedIpPromise) {
     // public-ip is ESM only, so we need to import it rather than require.
     // dynamic import() works in cjs code.
     const { publicIp } = await import("public-ip");
-    cachedIpPromise = publicIp({ timeout: 1000 })
-      .catch(err => {
-        console.warn(`Error while fetching public ip: ${err}`);
-        cachedIpPromise = null; // Retry later
-        return "UNKNOWN";
-      });
+    cachedIpPromise = publicIp({ timeout: 1000 }).catch((err) => {
+      console.warn(`Error while fetching public ip: ${err}`);
+      cachedIpPromise = null; // Retry later
+      return "UNKNOWN";
+    });
   }
   return cachedIpPromise;
 }
@@ -213,9 +216,9 @@ async function getSelfUrl(path = "") {
  * @returns {Eris~Role}
  */
 function getMainRole(member) {
-  const roles = member.roles.map(id => member.guild.roles.get(id));
-  roles.sort((a, b) => a.position > b.position ? -1 : 1);
-  return roles.find(r => r.hoist);
+  const roles = member.roles.map((id) => member.guild.roles.get(id));
+  roles.sort((a, b) => (a.position > b.position ? -1 : 1));
+  return roles.find((r) => r.hoist);
 }
 
 /**
@@ -242,7 +245,7 @@ function chunk(items, chunkSize) {
 function trimAll(str) {
   return str
     .split("\n")
-    .map(_str => _str.trim())
+    .map((_str) => _str.trim())
     .join("\n");
 }
 
@@ -263,7 +266,7 @@ function convertDelayStringToMS(str) {
     if (match[2] === "d") ms += match[1] * 1000 * 60 * 60 * 24;
     else if (match[2] === "h") ms += match[1] * 1000 * 60 * 60;
     else if (match[2] === "s") ms += match[1] * 1000;
-    else if (match[2] === "m" || ! match[2]) ms += match[1] * 1000 * 60;
+    else if (match[2] === "m" || !match[2]) ms += match[1] * 1000 * 60;
 
     str = str.slice(match[0].length);
   }
@@ -281,12 +284,17 @@ function convertDelayStringToMS(str) {
  * @returns {string[]}
  */
 function getValidMentionRoles(mentionRoles) {
-  if (! Array.isArray(mentionRoles)) {
+  if (!Array.isArray(mentionRoles)) {
     mentionRoles = [mentionRoles];
   }
 
-  return mentionRoles.filter(roleStr => {
-    return (roleStr !== null && roleStr !== "none" && roleStr !== "off" && roleStr !== "");
+  return mentionRoles.filter((roleStr) => {
+    return (
+      roleStr !== null &&
+      roleStr !== "none" &&
+      roleStr !== "off" &&
+      roleStr !== ""
+    );
   });
 }
 
@@ -353,7 +361,7 @@ function postSystemMessageWithFallback(channel, thread, text) {
  */
 function setDataModelProps(target, props) {
   for (const prop in props) {
-    if (! props.hasOwnProperty(prop)) continue;
+    if (!props.hasOwnProperty(prop)) continue;
     // DATETIME fields are always returned as Date objects in MySQL/MariaDB
     if (props[prop] instanceof Date) {
       // ...even when NULL, in which case the date's set to unix epoch
@@ -374,7 +382,8 @@ function isSnowflake(str) {
   return str && snowflakeRegex.test(str);
 }
 
-const humanizeDelay = (delay, opts = {}) => humanizeDuration(delay, Object.assign({conjunction: " and "}, opts));
+const humanizeDelay = (delay, opts = {}) =>
+  humanizeDuration(delay, Object.assign({ conjunction: " and " }, opts));
 
 const markdownCharsRegex = /([\\_*|`~])/g;
 function escapeMarkdown(str) {
@@ -422,7 +431,8 @@ function messageContentIsWithinMaxLength(content) {
     let embedContentLength = 0;
 
     if (content.embed.title) embedContentLength += content.embed.title.length;
-    if (content.embed.description) embedContentLength += content.embed.description.length;
+    if (content.embed.description)
+      embedContentLength += content.embed.description.length;
     if (content.embed.footer && content.embed.footer.text) {
       embedContentLength += content.embed.footer.text.length;
     }
@@ -489,7 +499,7 @@ function chunkMessageLines(str, maxChunkLength = 1990) {
   const chunks = chunkByLines(str, maxChunkLength);
   let openCodeBlock = false;
 
-  return chunks.map(_chunk => {
+  return chunks.map((_chunk) => {
     // If the chunk starts with a newline, add an invisible unicode char so Discord doesn't strip it away
     if (_chunk[0] === "\n") _chunk = "\u200b" + _chunk;
     // If the chunk ends with a newline, add an invisible unicode char so Discord doesn't strip it away
@@ -532,10 +542,10 @@ async function getOrFetchChannel(client, channelId) {
     return cachedChannel;
   }
 
-  if (! fetchChannelPromises[channelId]) {
+  if (!fetchChannelPromises[channelId]) {
     fetchChannelPromises[channelId] = (async () => {
       const channel = client.getRESTChannel(channelId);
-      if (! channel) {
+      if (!channel) {
         return null;
       }
 
