@@ -62,26 +62,34 @@ module.exports = ({ bot, knex, config, commands }) => {
 
       try {
         const res = await createReminderInDB(rem);
+
+        const outRem = res.reminder[0];
+        if (res.existing) {
+          thread.postSystemMessage(
+            `There is already a reminder set for this channel:\n\n${formatReminder(
+              outRem
+            )}`
+          );
+          return;
+        } else {
+          thread.postSystemMessage(
+            `Successfully set reminder for \`${outRem.fire_at}\` (\`${duration}\`).`
+          );
+          const fireAtDate = moment
+            .utc(outRem.fire_at, "YYYY-MM-DD HH:mm:ss")
+            .toDate();
+          const jobName = `${thread.id}-${outRem.fire_at}`;
+
+          schedule.scheduleJob(jobName, fireAtDate, () =>
+            reminderCallback(thread, outRem)
+          );
+        }
       } catch (e) {
         console.error(e);
         thread.postSystemMessage(
           "Something went wrong when creating the reminder."
         );
         return;
-      }
-
-      const outRem = res.reminder[0];
-      if (res.existing) {
-        thread.postSystemMessage(
-          `There is already a reminder set for this channel:\n\n${formatReminder(
-            outRem
-          )}`
-        );
-        return;
-      } else {
-        thread.postSystemMessage(
-          `Successfully set reminder for \`${outRem.fire_at}\` (\`${duration}\`).`
-        );
       }
     },
     { allowSuspended: true }
