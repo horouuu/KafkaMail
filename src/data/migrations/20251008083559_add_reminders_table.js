@@ -6,6 +6,7 @@ exports.up = async function (knex) {
   await knex.schema.createTable("reminders", (table) => {
     table.increments("id");
     table.string("thread_id", 36).notNullable().index();
+    table.string("author_name");
     table.string("author_id", 20).notNullable().index();
     table.datetime("fire_at").notNullable();
     table.datetime("created_at");
