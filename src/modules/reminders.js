@@ -9,11 +9,18 @@ const {
 const {
   parseDurationString,
   getCountdownDurationFromMoment,
-  parseColor,
   COLORS_SYSTEM_MSG,
 } = require("../utils");
 
+const { findById } = require("../data/threads");
+
 module.exports = ({ bot, knex, config, commands }) => {
+  function formatReminder(rem) {
+    return `Reminder in \`${getCountdownDurationFromMoment(
+      rem.fire_at
+    )}\`\nCreated by \`${rem.author_name}\` at \`${rem.created_at}\` (UTC)`;
+  }
+
   async function reminderCallback(thread, reminder) {
     thread.postSystemMessage(
       `Reminder set by \`${reminder.author_name}\`!\n<@${reminder.author_id}>`,
@@ -28,10 +35,40 @@ module.exports = ({ bot, knex, config, commands }) => {
     }
   }
 
-  function formatReminder(rem) {
-    return `Reminder in \`${getCountdownDurationFromMoment(
-      rem.fire_at
-    )}\`\nCreated by \`${rem.author_name}\` at \`${rem.created_at}\` (UTC)`;
+  function scheduleReminder(thread, reminder) {
+    const threadId = reminder.thread_id;
+    const fireAtDate = moment
+      .utc(reminder.fire_at, "YYYY-MM-DD HH:mm:ss")
+      .toDate();
+    const jobName = `${threadId}-${reminder.fire_at}`;
+
+    schedule.scheduleJob(jobName, fireAtDate, () =>
+      reminderCallback(thread, reminder)
+    );
+  }
+
+  async function initReminders() {
+    try {
+      const reminders = await knex("reminders").select();
+      let countFired = 0;
+      let countScheduled = 0;
+      for (const reminder of reminders) {
+        const thread = await findById(reminder.thread_id);
+        if (moment.utc(reminder.fire_at).valueOf() < moment.utc().valueOf()) {
+          reminderCallback(thread, reminder);
+          countFired += 1;
+        } else {
+          scheduleReminder(thread, reminder);
+          countScheduled += 1;
+        }
+      }
+
+      console.log(
+        `Rescheduled ${countScheduled} reminders and fired ${countFired} expired reminders.`
+      );
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   commands.addInboxThreadCommand(
@@ -120,14 +157,7 @@ module.exports = ({ bot, knex, config, commands }) => {
           thread.postSystemMessage(
             `Successfully set reminder for \`${outRem.fire_at}\` (\`${duration}\`).`
           );
-          const fireAtDate = moment
-            .utc(outRem.fire_at, "YYYY-MM-DD HH:mm:ss")
-            .toDate();
-          const jobName = `${thread.id}-${outRem.fire_at}`;
-
-          schedule.scheduleJob(jobName, fireAtDate, () =>
-            reminderCallback(thread, outRem)
-          );
+          scheduleReminder(thread, outRem);
         }
       } catch (e) {
         console.error(e);
@@ -139,4 +169,6 @@ module.exports = ({ bot, knex, config, commands }) => {
     },
     { allowSuspended: true }
   );
+
+  initReminders();
 };
