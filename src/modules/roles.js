@@ -21,7 +21,9 @@ module.exports = ({ bot, knex, config, commands }) => {
       return utils.getInboxGuild().roles.get(input);
     }
 
-    const regex = new RegExp(`^(${input.toLowerCase()}.*)$`);
+    const regex = new RegExp(
+      `^(${input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").toLowerCase()}.*)$`
+    );
     return utils
       .getInboxGuild()
       .roles.filter((r) => regex.test(r.name.toLowerCase()));
