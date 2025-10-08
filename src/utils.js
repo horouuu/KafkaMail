@@ -358,6 +358,23 @@ function sanitizeRegex(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+function parseDurationString(durationStr) {
+  const match = durationStr.match(/^([1-9]+)([smhd])$/);
+  if (!match) throw new Error("Invalid duration format");
+
+  const num = parseInt(match[1], 10);
+  const unit = match[2];
+  const multipliers = {
+    s: 1000,
+    m: 1000 * 60,
+    h: 1000 * 60 * 60,
+    d: 1000 * 60 * 60 * 24,
+    w: 1000 * 60 * 60 * 24 * 7,
+  };
+
+  return num * multipliers[unit];
+}
+
 /**
  * A normalized way to set props in data models, fixing some inconsistencies between different DB drivers in knex
  * @param {Object} target
@@ -639,6 +656,7 @@ module.exports = {
   noop,
 
   sanitizeRegex,
+  parseDurationString,
 
   START_CODEBLOCK,
   END_CODEBLOCK,
