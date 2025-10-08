@@ -354,6 +354,10 @@ function postSystemMessageWithFallback(channel, thread, text) {
   }
 }
 
+function sanitizeRegex(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 /**
  * A normalized way to set props in data models, fixing some inconsistencies between different DB drivers in knex
  * @param {Object} target
@@ -633,6 +637,8 @@ module.exports = {
   getOrFetchChannel,
 
   noop,
+
+  sanitizeRegex,
 
   START_CODEBLOCK,
   END_CODEBLOCK,

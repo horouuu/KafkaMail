@@ -22,7 +22,7 @@ module.exports = ({ bot, knex, config, commands }) => {
     }
 
     const regex = new RegExp(
-      `^(${input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").toLowerCase()}.*)$`
+      `^(${utils.sanitizeRegex(input).toLowerCase()}.*)$`
     );
     return utils
       .getInboxGuild()
