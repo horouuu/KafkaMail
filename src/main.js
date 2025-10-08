@@ -445,6 +445,7 @@ function getBasePlugins() {
     "file:./src/modules/joinLeaveNotification",
     "file:./src/modules/roles",
     "file:./src/modules/notes",
+    "file:./src/modules/reminders",
   ];
 }
 
