@@ -4,6 +4,7 @@ const moment = require("moment");
 const humanizeDuration = require("humanize-duration");
 const config = require("./cfg");
 const { BotError } = require("./BotError");
+const { floor } = Math;
 
 const userMentionRegex = /^<@!?([0-9]+?)>$/;
 
@@ -359,7 +360,7 @@ function sanitizeRegex(string) {
 }
 
 function parseDurationString(durationStr) {
-  const match = durationStr.match(/^([1-9]+)([smhd])$/);
+  const match = durationStr.match(/^([1-9]+[0-9]*)([smhd])$/);
   if (!match) throw new Error("Invalid duration format");
 
   const num = parseInt(match[1], 10);
@@ -369,10 +370,46 @@ function parseDurationString(durationStr) {
     m: 1000 * 60,
     h: 1000 * 60 * 60,
     d: 1000 * 60 * 60 * 24,
-    w: 1000 * 60 * 60 * 24 * 7,
   };
 
   return num * multipliers[unit];
+}
+
+function getCountdownDurationFromMoment(dateStr) {
+  let ms =
+    moment.utc(dateStr, "YYYY-MM-DD HH:mm:ss").valueOf() -
+    moment.utc(new Date()).valueOf();
+  let res = "";
+  const s = 1000;
+  const m = s * 60;
+  const h = m * 60;
+  const d = h * 24;
+
+  const days = floor(ms / d);
+  if (days >= 1) {
+    ms -= days * d;
+    res += `${days}d`;
+  }
+
+  const hours = floor(ms / h);
+  if (hours >= 1) {
+    ms -= hours * h;
+    res += ` ${hours}h`;
+  }
+
+  const minutes = floor(ms / m);
+  if (minutes >= 1) {
+    ms -= minutes * m;
+    res += ` ${minutes}m`;
+  }
+
+  const seconds = floor(ms / s);
+  if (seconds >= 1) {
+    ms -= seconds * s;
+    res += ` ${seconds}s`;
+  }
+
+  return res.trim();
 }
 
 /**
@@ -657,6 +694,7 @@ module.exports = {
 
   sanitizeRegex,
   parseDurationString,
+  getCountdownDurationFromMoment,
 
   START_CODEBLOCK,
   END_CODEBLOCK,
