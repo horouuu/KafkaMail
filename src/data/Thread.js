@@ -651,8 +651,12 @@ class Thread {
     });
 
     const content = messageContentToAdvancedMessageContent(
-      await formatters.formatSystemThreadMessage(threadMessage)
+      await formatters.formatSystemThreadMessage(
+        threadMessage,
+        opts.color ?? undefined
+      )
     );
+
     content.allowedMentions = opts.allowedMentions;
     if (opts.messageReference) {
       content.messageReference = {
@@ -660,6 +664,7 @@ class Thread {
         failIfNotExists: false,
       };
     }
+
     const msg = await this._postToThreadChannel(content);
 
     threadMessage.inbox_message_id = msg.id;
