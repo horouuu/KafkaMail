@@ -330,8 +330,8 @@ module.exports = async function ({ config, bot, formats }) {
     return { embed };
   };
 
-  const systemToStaffFormatter = function (threadMessage) {
-    const embed = { description: threadMessage.original_body, color: settings.get(SETTING_NAMES.SYSTEM_STAFF_COLOR) };
+  const systemToStaffFormatter = function (threadMessage, color=settings.get(SETTING_NAMES.SYSTEM_STAFF_COLOR)) {
+    const embed = { description: threadMessage.original_body, color: color };
 
     embed.author = {
       name: systemName,
