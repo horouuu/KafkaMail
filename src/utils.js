@@ -4,6 +4,7 @@ const moment = require("moment");
 const humanizeDuration = require("humanize-duration");
 const config = require("./cfg");
 const { BotError } = require("./BotError");
+const { floor } = Math;
 
 const userMentionRegex = /^<@!?([0-9]+?)>$/;
 
@@ -358,6 +359,59 @@ function sanitizeRegex(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+function parseDurationString(durationStr) {
+  const match = durationStr.match(/^([1-9]+[0-9]*)([smhd])$/);
+  if (!match) throw new Error("Invalid duration format");
+
+  const num = parseInt(match[1], 10);
+  const unit = match[2];
+  const multipliers = {
+    s: 1000,
+    m: 1000 * 60,
+    h: 1000 * 60 * 60,
+    d: 1000 * 60 * 60 * 24,
+  };
+
+  return num * multipliers[unit];
+}
+
+function getCountdownDurationFromMoment(dateStr) {
+  let ms =
+    moment.utc(dateStr, "YYYY-MM-DD HH:mm:ss").valueOf() -
+    moment.utc(new Date()).valueOf();
+  let res = "";
+  const s = 1000;
+  const m = s * 60;
+  const h = m * 60;
+  const d = h * 24;
+
+  const days = floor(ms / d);
+  if (days >= 1) {
+    ms -= days * d;
+    res += `${days}d`;
+  }
+
+  const hours = floor(ms / h);
+  if (hours >= 1) {
+    ms -= hours * h;
+    res += ` ${hours}h`;
+  }
+
+  const minutes = floor(ms / m);
+  if (minutes >= 1) {
+    ms -= minutes * m;
+    res += ` ${minutes}m`;
+  }
+
+  const seconds = floor(ms / s);
+  if (seconds >= 1) {
+    ms -= seconds * s;
+    res += ` ${seconds}s`;
+  }
+
+  return res.trim();
+}
+
 /**
  * A normalized way to set props in data models, fixing some inconsistencies between different DB drivers in knex
  * @param {Object} target
@@ -582,8 +636,63 @@ function messageContentToAdvancedMessageContent(content) {
   return typeof content === "string" ? { content } : content;
 }
 
+// Accepts 100,100,100 and 100 100 100
+const isRgb = /^(\d{1,3})\D+(\d{1,3})\D+(\d{1,3})$/;
+
+/**
+ * Parses a color from the input string. The following formats are accepted:
+ * - #HEXVALUE
+ * - rrr, ggg, bbb
+ * - rrr ggg bbb
+ * @return Parsed color as integer or `null` if no color could be parsed
+ */
+function parseColor(input) {
+  // Convert HEX to RGB
+  if (input.startsWith("#")) {
+    let r = 0,
+      g = 0,
+      b = 0;
+
+    // 3 digits
+    if (input.length == 4) {
+      r = "0x" + input[1] + input[1];
+      g = "0x" + input[2] + input[2];
+      b = "0x" + input[3] + input[3];
+
+      // 6 digits
+    } else if (input.length == 7) {
+      r = "0x" + input[1] + input[2];
+      g = "0x" + input[3] + input[4];
+      b = "0x" + input[5] + input[6];
+    }
+
+    input = `${+r}, ${+g}, ${+b}`;
+  }
+
+  // Convert RGB to INT or return null if invalid
+  const rgbMatch = input.match(isRgb);
+  if (rgbMatch) {
+    const r = parseInt(rgbMatch[1], 10);
+    const g = parseInt(rgbMatch[2], 10);
+    const b = parseInt(rgbMatch[3], 10);
+
+    if (r > 255 || g > 255 || b > 255) {
+      return null;
+    }
+
+    // Convert to int and return
+    return (r << 16) + (g << 8) + b;
+  }
+
+  return null;
+}
+
 const START_CODEBLOCK = "```";
 const END_CODEBLOCK = "```";
+
+const COLORS_SYSTEM_MSG = {
+  COLORS_DELETION: parseColor("#c70000"),
+};
 
 module.exports = {
   getInboxGuild,
@@ -639,7 +748,11 @@ module.exports = {
   noop,
 
   sanitizeRegex,
+  parseDurationString,
+  getCountdownDurationFromMoment,
+  parseColor,
 
   START_CODEBLOCK,
   END_CODEBLOCK,
+  COLORS_SYSTEM_MSG,
 };
