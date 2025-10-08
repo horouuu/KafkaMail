@@ -34,4 +34,12 @@ async function createReminderInDB(data) {
   return out;
 }
 
-module.exports = { createReminderInDB };
+async function getExistingReminderInThread(threadId) {
+  const reminder = await knex("reminders")
+    .where("thread_id", threadId)
+    .select();
+
+  return reminder;
+}
+
+module.exports = { createReminderInDB, getExistingReminderInThread };

@@ -1,6 +1,9 @@
 const moment = require("moment");
 const Reminder = require("../data/Reminder");
-const { createReminderInDB } = require("../data/reminders");
+const {
+  createReminderInDB,
+  getExistingReminderInThread,
+} = require("../data/reminders");
 const {
   parseDurationString,
   getCountdownDurationFromMoment,
@@ -8,6 +11,30 @@ const {
 
 module.exports = ({ bot, knex, config, commands }) => {
   function reminderCallback(thread) {}
+
+  function formatReminder(rem) {
+    return `Reminder in \`${getCountdownDurationFromMoment(
+      rem.fire_at
+    )}\`\nCreated by \`${rem.author_name}\` at \`${rem.created_at}\` (UTC)`;
+  }
+
+  commands.addInboxThreadCommand("reminder", [], async (msg, args, thread) => {
+    const threadId = thread.id;
+    const reminder = await getExistingReminderInThread(threadId);
+
+    if (reminder.length >= 1) {
+      let msg = formatReminder(reminder[0]);
+      if (reminder.length > 1) {
+        msg +=
+          "\n\nThere seems to be more than one reminder assigned to this thread.\nPlease contact notify a developer.";
+      }
+      thread.postSystemMessage(msg);
+    } else {
+      thread.postSystemMessage(
+        "There is currently no reminder set for this channel."
+      );
+    }
+  });
 
   commands.addInboxThreadCommand(
     "reminder",
@@ -33,15 +60,22 @@ module.exports = ({ bot, knex, config, commands }) => {
         fire_at: moment.utc(fireDate).format("YYYY-MM-DD HH:mm:ss"),
       });
 
-      const res = await createReminderInDB(rem);
+      try {
+        const res = await createReminderInDB(rem);
+      } catch (e) {
+        console.error(e);
+        thread.postSystemMessage(
+          "Something went wrong when creating the reminder."
+        );
+        return;
+      }
+
       const outRem = res.reminder[0];
       if (res.existing) {
         thread.postSystemMessage(
-          `There is already a reminder set for this channel:\n\nReminder in \`${getCountdownDurationFromMoment(
-            outRem.fire_at
-          )}\`\nCreated by \`${outRem.author_name}\` at \`${
-            outRem.created_at
-          }\` (UTC)`
+          `There is already a reminder set for this channel:\n\n${formatReminder(
+            outRem
+          )}`
         );
         return;
       } else {
