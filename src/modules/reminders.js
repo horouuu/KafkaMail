@@ -1,22 +1,67 @@
 const moment = require("moment");
+const schedule = require("node-schedule");
 const Reminder = require("../data/Reminder");
 const {
   createReminderInDB,
   getExistingReminderInThread,
+  deleteAllRemindersOfThread,
 } = require("../data/reminders");
 const {
   parseDurationString,
   getCountdownDurationFromMoment,
+  parseColor,
+  COLORS_SYSTEM_MSG,
 } = require("../utils");
 
 module.exports = ({ bot, knex, config, commands }) => {
-  function reminderCallback(thread) {}
+  async function reminderCallback(thread, reminder) {
+    thread.postSystemMessage(
+      `Reminder set by \`${reminder.author_name}\`!\n<@${reminder.author_id}>`,
+      {
+        allowedMentions: { users: true },
+      }
+    );
+    try {
+      await deleteAllRemindersOfThread(thread.id);
+    } catch (e) {
+      console.error(e);
+    }
+  }
 
   function formatReminder(rem) {
     return `Reminder in \`${getCountdownDurationFromMoment(
       rem.fire_at
     )}\`\nCreated by \`${rem.author_name}\` at \`${rem.created_at}\` (UTC)`;
   }
+
+  commands.addInboxThreadCommand(
+    "reminder clear",
+    [],
+    async (msg, args, thread) => {
+      try {
+        const deleted = await deleteAllRemindersOfThread(thread.id);
+
+        if (deleted.length == 0) {
+          thread.postSystemMessage(
+            "There are no reminders set in this channel!"
+          );
+          return;
+        } else {
+          thread.postSystemMessage(
+            `Deleted:\n\n${formatReminder(deleted[0])}`,
+            { color: COLORS_SYSTEM_MSG.COLORS_DELETION }
+          );
+
+          schedule.scheduledJobs[`${thread.id}-${deleted[0].fire_at}`].cancel();
+        }
+      } catch (e) {
+        console.error(e);
+        thread.postSystemMessage(
+          "Something went wrong when deleting reminders."
+        );
+      }
+    }
+  );
 
   commands.addInboxThreadCommand("reminder", [], async (msg, args, thread) => {
     const threadId = thread.id;

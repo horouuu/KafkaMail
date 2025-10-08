@@ -42,4 +42,17 @@ async function getExistingReminderInThread(threadId) {
   return reminder;
 }
 
-module.exports = { createReminderInDB, getExistingReminderInThread };
+async function deleteAllRemindersOfThread(threadId) {
+  const toDelete = await getExistingReminderInThread(threadId);
+  if (toDelete.length > 0) {
+    await knex("reminders").where("thread_id", threadId).delete();
+  }
+
+  return toDelete;
+}
+
+module.exports = {
+  createReminderInDB,
+  getExistingReminderInThread,
+  deleteAllRemindersOfThread,
+};
