@@ -208,13 +208,14 @@ module.exports = async function ({ config, bot, formats }) {
       };
     }
 
-    parseAndFormatEmbeds(threadMessage, embed);
+    const embeds = [embed];
+    parseAndFormatEmbeds(threadMessage, embeds);
 
     if (config.threadTimestamps && settings.get(SETTING_NAMES.STAFF_REPLY_DM_TIMESTAMP_ENABLE)) {
       embed.timestamp = moment().utc().toISOString();
     }
 
-    return { embed };
+    return { embeds };
   };
 
   const replyInThreadFormatter = function (threadMessage) {
@@ -238,13 +239,14 @@ module.exports = async function ({ config, bot, formats }) {
       };
     }
 
-    parseAndFormatEmbeds(threadMessage, embed);
+    const embeds = [embed];
+    parseAndFormatEmbeds(threadMessage, embeds);
 
     if (config.threadTimestamps) {
       embed.timestamp = moment().utc().toISOString();
     }
 
-    return { embed };
+    return { embeds };
   };
 
   const userReplyFormatter = function (threadMessage) {
@@ -273,13 +275,14 @@ module.exports = async function ({ config, bot, formats }) {
       icon_url: bot.user.avatarURL,
     };
 
-    parseAndFormatEmbeds(threadMessage, embed);
+    const embeds = [embed];
+    parseAndFormatEmbeds(threadMessage, embeds);
 
     if (config.threadTimestamps && settings.get(SETTING_NAMES.STAFF_REPLY_DM_TIMESTAMP_ENABLE)) {
       embed.timestamp = moment().utc().toISOString();
     }
 
-    return { embed };
+    return { embeds };
   };
 
   const systemToUserThreadFormatter = function (threadMessage) {
@@ -290,13 +293,14 @@ module.exports = async function ({ config, bot, formats }) {
       icon_url: bot.user.avatarURL,
     };
 
-    parseAndFormatEmbeds(threadMessage, embed);
+    const embeds = [embed];
+    parseAndFormatEmbeds(threadMessage, embeds);
     
     if (config.threadTimestamps) {
       embed.timestamp = moment().utc().toISOString();
     }
 
-    return { embed };
+    return { embeds };
   };
 
   const systemToStaffFormatter = function (threadMessage, color=settings.get(SETTING_NAMES.SYSTEM_STAFF_COLOR)) {
@@ -321,7 +325,7 @@ module.exports = async function ({ config, bot, formats }) {
       embed.timestamp = moment().utc().toISOString();
     }
 
-    return { content: properMentions.join(" "), embed, allowedMentions: {users: true, roles: true, everyone: true} };
+    return { content: properMentions.join(" "), embeds, allowedMentions: {users: true, roles: true, everyone: true} };
   };
 
   // Reset the pfpMap every hour or so, we dont want outdated pfp's to stay forever
