@@ -189,6 +189,8 @@ module.exports = async function ({ config, bot, formats }) {
         const newEmbed = { image: {url: link}, color: firstEmbed.color, url: "http://google.com" };
         embeds.push(newEmbed);
       }
+      if (firstEmbed.description.length == 0) embeds.splice(0, 1);
+      if (embeds.length > 0) embeds[0].author = firstEmbed.author;
   }
 
   const replyToUserFormatter = function (threadMessage) {

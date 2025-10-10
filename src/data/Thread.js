@@ -184,7 +184,6 @@ class Thread {
     const threadMessage = await knex("thread_messages")
       .where("id", insertedIds[0])
       .select();
-
     return new ThreadMessage(threadMessage[0]);
   }
 
@@ -748,17 +747,19 @@ class Thread {
    * @returns {Promise<void>}
    */
   async saveChatMessageToLogs(msg) {
-    // TODO: Save attachments?
-    return this._addThreadMessageToDB({
-      message_type: THREAD_MESSAGE_TYPE.CHAT,
-      user_id: msg.author.id,
-      user_name: config.useDisplaynames
-        ? msg.author.globalName || msg.author.username
-        : msg.author.username,
-      original_body: msg.content,
-      is_anonymous: 0,
-      dm_message_id: msg.id,
-    });
+    return this._addThreadMessageToDB(
+      new ThreadMessage({
+        message_type: THREAD_MESSAGE_TYPE.CHAT,
+        user_id: msg.author.id,
+        user_name: config.useDisplaynames
+          ? msg.author.globalName || msg.author.username
+          : msg.author.username,
+        original_body: msg.content,
+        attachments: [...msg.attachments].map((a) => a.url),
+        is_anonymous: 0,
+        dm_message_id: msg.id,
+      }).getSQLProps()
+    );
   }
 
   async saveCommandMessageToLogs(msg) {
