@@ -182,11 +182,11 @@ module.exports = async function ({ config, bot, formats }) {
   }
 
   // Parses all the attachments of the threadMessage and attaches them to the embed.
-  function parseAndAttachToEmbed(threadMessage, embeds) {
+  function parseAndFormatEmbeds(threadMessage, embeds) {
       if (embeds.length == 0) return;
       const firstEmbed = embeds[0];
       for (const link of threadMessage.attachments) {
-        const newEmbed = { image: {url: link}, color: firstEmbed.color };
+        const newEmbed = { image: {url: link}, color: firstEmbed.color, url: "http://google.com" };
         embeds.push(newEmbed);
       }
   }
@@ -208,7 +208,7 @@ module.exports = async function ({ config, bot, formats }) {
       };
     }
 
-    parseAndAttachToEmbed(threadMessage, embed);
+    parseAndFormatEmbeds(threadMessage, embed);
 
     if (config.threadTimestamps && settings.get(SETTING_NAMES.STAFF_REPLY_DM_TIMESTAMP_ENABLE)) {
       embed.timestamp = moment().utc().toISOString();
@@ -238,7 +238,7 @@ module.exports = async function ({ config, bot, formats }) {
       };
     }
 
-    parseAndAttachToEmbed(threadMessage, embed);
+    parseAndFormatEmbeds(threadMessage, embed);
 
     if (config.threadTimestamps) {
       embed.timestamp = moment().utc().toISOString();
@@ -256,7 +256,7 @@ module.exports = async function ({ config, bot, formats }) {
     };
 
     const embeds = [embed];
-    parseAndAttachToEmbed(threadMessage, embeds);
+    parseAndFormatEmbeds(threadMessage, embeds);
 
     if (config.threadTimestamps) {
       embed.timestamp = moment().utc().toISOString();
@@ -273,7 +273,7 @@ module.exports = async function ({ config, bot, formats }) {
       icon_url: bot.user.avatarURL,
     };
 
-    parseAndAttachToEmbed(threadMessage, embed);
+    parseAndFormatEmbeds(threadMessage, embed);
 
     if (config.threadTimestamps && settings.get(SETTING_NAMES.STAFF_REPLY_DM_TIMESTAMP_ENABLE)) {
       embed.timestamp = moment().utc().toISOString();
@@ -290,7 +290,7 @@ module.exports = async function ({ config, bot, formats }) {
       icon_url: bot.user.avatarURL,
     };
 
-    parseAndAttachToEmbed(threadMessage, embed);
+    parseAndFormatEmbeds(threadMessage, embed);
     
     if (config.threadTimestamps) {
       embed.timestamp = moment().utc().toISOString();
@@ -308,7 +308,7 @@ module.exports = async function ({ config, bot, formats }) {
     };
 
     const embeds = [embed];
-    parseAndAttachToEmbed(threadMessage, embeds);
+    parseAndFormatEmbeds(threadMessage, embeds);
 
     // We can't directly join the matched array since that results in "@Dark,108552944961454080"
     const foundMentions = threadMessage.original_body.matchAll(mentionRegex);
