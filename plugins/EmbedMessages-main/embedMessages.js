@@ -182,26 +182,13 @@ module.exports = async function ({ config, bot, formats }) {
   }
 
   // Parses all the attachments of the threadMessage and attaches them to the embed.
-  function parseAndAttachToEmbed(threadMessage, embed) {
-      if (threadMessage.attachments.length === 1) {
-      const url = threadMessage.attachments[0];
-      const noQueryUrl = new URL(url).origin + new URL(url).pathname;
-      if (
-        noQueryUrl.endsWith(".png")  ||
-        noQueryUrl.endsWith(".jpg") ||
-        noQueryUrl.endsWith(".gif")
-      ) {
-        embed.image = {
-          url: noQueryUrl,
-        };
-      } else {
-        embed.description += `\n${noQueryUrl}`;
-      }
-    } else {
+  function parseAndAttachToEmbed(threadMessage, embeds) {
+      if (embeds.length == 0) return;
+      const firstEmbed = embeds[0];
       for (const link of threadMessage.attachments) {
-        embed.description += `\n${link}`;
+        const newEmbed = { image: {url: link}, color: firstEmbed.color };
+        embeds.push(newEmbed);
       }
-    }
   }
 
   const replyToUserFormatter = function (threadMessage) {
@@ -268,32 +255,14 @@ module.exports = async function ({ config, bot, formats }) {
       icon_url: getPfp(userId),
     };
 
-    
-    if (threadMessage.attachments.length === 1) {
-      const url = threadMessage.attachments[0];
-      const noQueryUrl = new URL(url).origin + new URL(url).pathname;
-      if (
-        noQueryUrl.endsWith(".png")  ||
-        noQueryUrl.endsWith(".jpg") ||
-        noQueryUrl.endsWith(".gif")
-      ) {
-        embed.image = {
-          url: noQueryUrl,
-        };
-      } else {
-        embed.description += `\n${noQueryUrl}`;
-      }
-    } else {
-      for (const link of threadMessage.attachments) {
-        embed.description += `\n${link}`;
-      }
-    }
+    const embeds = [embed];
+    parseAndAttachToEmbed(threadMessage, embeds);
 
     if (config.threadTimestamps) {
       embed.timestamp = moment().utc().toISOString();
     }
 
-    return { embed };
+    return { embeds };
   };
 
   const systemToUserDmFormatter = function (threadMessage) {
@@ -338,7 +307,8 @@ module.exports = async function ({ config, bot, formats }) {
       icon_url: bot.user.avatarURL,
     };
 
-    parseAndAttachToEmbed(threadMessage, embed);
+    const embeds = [embed];
+    parseAndAttachToEmbed(threadMessage, embeds);
 
     // We can't directly join the matched array since that results in "@Dark,108552944961454080"
     const foundMentions = threadMessage.original_body.matchAll(mentionRegex);
