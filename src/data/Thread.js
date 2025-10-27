@@ -468,6 +468,16 @@ class Thread {
     const smallAttachmentLinks = [];
     const attachmentFiles = [];
 
+    if (msg.stickerItems && msg.stickerItems.length) {
+      const toAttach = msg.stickerItems.map((s) => ({
+        url: `https://media.discordapp.net/stickers/${s.id}.webp?size=160`,
+        content_type: "image/webp",
+        filename: `${s.id}.webp`,
+      }));
+
+      msg.attachments = [...msg.attachments, ...toAttach];
+    }
+
     for (const attachment of msg.attachments) {
       const savedAttachment = await attachments.saveAttachment(attachment);
 
@@ -531,14 +541,6 @@ class Thread {
 
       messageContent += `\n\n*<This message contains an invite to ${activityText} on ${applicationName}>*`;
       messageContent = messageContent.trim();
-    }
-
-    if (msg.stickerItems && msg.stickerItems.length) {
-      const stickerLines = msg.stickerItems.map((sticker) => {
-        return `*Sent sticker "${sticker.name}":* https://media.discordapp.net/stickers/${sticker.id}.webp?size=160`;
-      });
-
-      messageContent += "\n\n" + stickerLines.join("\n");
     }
 
     messageContent = messageContent.trim();
