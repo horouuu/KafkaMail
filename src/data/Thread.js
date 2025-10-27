@@ -335,7 +335,8 @@ class Thread {
             if (
               noQueryUrl.endsWith(".png") ||
               noQueryUrl.endsWith(".jpg") ||
-              noQueryUrl.endsWith(".gif")
+              noQueryUrl.endsWith(".gif") ||
+              noQueryUrl.endsWith(".webp")
             )
               return;
             files.push(file);
